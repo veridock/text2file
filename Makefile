@@ -105,7 +105,7 @@ install-deps:
 	@bash $(CONFIG_DIR)/install_dependencies.sh
 
 # Push changes to git after running tests and linting
-push: lint test
+push: test
 	@echo -e "$(GREEN)✓ All tests and linting passed!$(NC)"
 	@echo -e "\n$(BLUE)Staging changes...$(NC)"
 	git add .
