@@ -1,19 +1,17 @@
 """Command-line interface for text2file."""
 
-"""Command-line interface for text2file."""
-
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import List
 
 import click
 
 from .generators import (
     SUPPORTED_EXTENSIONS,
+    ValidationResult,
+    cleanup_invalid_files,
     generate_file,
     validate_file,
-    cleanup_invalid_files,
-    ValidationResult
 )
 
 
@@ -40,7 +38,9 @@ def cli() -> None:
 @click.option(
     "--output-dir",
     "-o",
-    type=click.Path(file_okay=False, dir_okay=True, writable=True, path_type=Path),
+    type=click.Path(
+        path_type=Path, file_okay=False, dir_okay=True, allow_dash=False
+    ),
     default=Path.cwd(),
     help="Output directory for generated files",
 )
@@ -52,16 +52,13 @@ def cli() -> None:
     help="Prefix for generated filenames",
 )
 def generate(content: str, extensions: List[str], output_dir: Path, prefix: str) -> None:
-    """Generate test files with the given content and extensions.
-
-    Examples:
-        text2file generate "Test content" txt md pdf
-        text2file generate "Another test" --output-dir ./output --prefix test docx xlsx
-    """
+    """Generate files with the given content and extensions."""
     output_dir.mkdir(parents=True, exist_ok=True)
     
     # Validate extensions
-    invalid_exts = [ext for ext in extensions if ext.lower() not in SUPPORTED_EXTENSIONS]
+    invalid_exts = [
+        ext for ext in extensions if ext.lower() not in SUPPORTED_EXTENSIONS
+    ]
     if invalid_exts:
         raise click.UsageError(
             f"Unsupported extensions: {', '.join(invalid_exts)}. "

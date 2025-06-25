@@ -1,0 +1,45 @@
+# Enable all error codes by default
+select = ["E", "F", "B", "I"]
+
+# Exclude commonly ignored directories
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+
+# Line length
+line-length = 88
+
+# Allow autofix for all rules
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when they are prefixed with _
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+# Configure Ruff's behavior
+[per-file-ignores]
+"tests/*" = ["S101"]  # Ignore assert in test files
+
+# Configure isort
+[isort]
+known-first-party = ["text2file"]
