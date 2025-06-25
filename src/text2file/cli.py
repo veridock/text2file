@@ -144,20 +144,9 @@ def generate(content: str, extensions: List[str], output_dir: Path, prefix: str,
   output_dir.mkdir(parents=True, exist_ok=True)
 
   if debug:
-    click.echo("=== DEBUG MODE ===", err=True)
-    click.echo(f"Working directory: {Path.cwd()}", err=True)
-    click.echo(f"Requested extensions: {extensions!r}", err=True)
-    click.echo(f"Supported extensions: {sorted(SUPPORTED_EXTENSIONS)!r}", err=True)
-    click.echo(f"_generators keys: {sorted(_generators.keys())!r}", err=True)
-
-    # Print detailed extension info
-    click.echo("\nExtension details:", err=True)
-    for ext in extensions:
-      normalized = ext.lower().lstrip('.')
-      click.echo(f"  Extension: {ext!r} -> normalized: {normalized!r}", err=True)
-      click.echo(f"    in SUPPORTED_EXTENSIONS: {normalized in SUPPORTED_EXTENSIONS}", err=True)
-      click.echo(f"    in _generators: {normalized in _generators}", err=True)
-      click.echo(f"    generator func: {_generators.get(normalized, 'NONE')}", err=True)
+    click.echo(f"Debug: Working directory: {Path.cwd()}", err=True)
+    click.echo(f"Debug: Requested extensions: {', '.join(extensions)}", err=True)
+    click.echo(f"Debug: Supported extensions: {', '.join(sorted(SUPPORTED_EXTENSIONS))}", err=True)
 
   # Validate extensions
   invalid_exts = [
@@ -174,17 +163,17 @@ def generate(content: str, extensions: List[str], output_dir: Path, prefix: str,
   for ext in extensions:
     try:
       filepath = generate_file(content, ext, output_dir, prefix)
-      click.echo(f"Generated: {filepath}")
+      click.echo(f"✓ Generated: {filepath}")
       generated_files.append(filepath)
     except Exception as e:
-      click.echo(f"Error generating {ext} file: {e}", err=True)
+      click.echo(f"✗ Error generating {ext} file: {e}", err=True)
 
   if generated_files:
-    click.echo("\nSuccessfully generated files:")
+    click.echo("\n🎉 Successfully generated files:")
     for filepath in generated_files:
-      click.echo(f"- {filepath}")
+      click.echo(f"  • {filepath}")
   else:
-    click.echo("No files were generated.", err=True)
+    click.echo("No files were generated. Check for error messages above.", err=True)
 
 
 @cli.command()
