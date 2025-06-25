@@ -1,13 +1,11 @@
 """Validator for PDF files."""
 
-import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
-from ..generators.base import BaseGenerator
 from .base import BaseValidator, ValidationResult
 
-# Try to import PyPDF2 for more advanced PDF validation
+# Try to import PyPDF2 for more thorough PDF validation
 HAS_PYPDF2 = False
 try:
     import PyPDF2
@@ -35,7 +33,10 @@ class PdfValidator(BaseValidator):
             path = Path(file_path)
             if not path.exists():
                 return ValidationResult(
-                    is_valid=False, message=f"File not found: {file_path}"
+                    is_valid=False,
+                    message=(
+                        f"File not found: {file_path}"
+                    )
                 )
 
             if not path.is_file():
@@ -57,7 +58,10 @@ class PdfValidator(BaseValidator):
                 if not header.startswith(b"%PDF-"):
                     return ValidationResult(
                         is_valid=False,
-                        message="File does not appear to be a valid PDF (missing PDF header)",
+                        message=(
+                            "File does not appear to be a valid PDF "
+                            "(missing PDF header)"
+                        ),
                     )
 
                 # Check for EOF marker
@@ -70,7 +74,7 @@ class PdfValidator(BaseValidator):
                     )
 
             # If PyPDF2 is available, do more thorough validation
-            if HAS_PYPDF2:
+            if PyPDF2:
                 return cls._validate_with_pypdf2(file_path)
 
             # Otherwise, just do basic validation
@@ -89,7 +93,14 @@ class PdfValidator(BaseValidator):
 
     @classmethod
     def _validate_with_pypdf2(cls, file_path: str) -> ValidationResult:
-        """Validate a PDF file using PyPDF2 for more thorough validation."""
+        """Validate a PDF file using PyPDF2.
+
+        Args:
+            file_path: Path to the PDF file to validate
+
+        Returns:
+            ValidationResult indicating whether the PDF is valid
+        """
         try:
             with open(file_path, "rb") as f:
                 # Create a PDF reader object
@@ -110,7 +121,7 @@ class PdfValidator(BaseValidator):
                     }
 
                 # Get page count
-                page_count = len(pdf_reader.pages)
+                num_pages = len(pdf_reader.pages)
 
                 # Check for encryption
                 is_encrypted = pdf_reader.is_encrypted
@@ -120,17 +131,29 @@ class PdfValidator(BaseValidator):
                 if hasattr(pdf_reader, "outline") and pdf_reader.outline:
                     outline = cls._extract_outline(pdf_reader.outline)
 
+                dimensions = ""
+                if hasattr(pdf_reader.pages[0], "mediaBox"):
+                    media_box = pdf_reader.pages[0].mediaBox
+                    dimensions = (
+                        f"{media_box.width:.1f}x{media_box.height:.1f} points"
+                    )
+
+                metadata = {
+                    "size": Path(file_path).stat().st_size,
+                    "page_count": num_pages,
+                    "is_encrypted": is_encrypted,
+                    "info": {k: v for k, v in info.items() if v},
+                    "outline_count": len(outline),
+                    "validated_with": "pypdf2",
+                }
+
                 return ValidationResult(
                     is_valid=True,
-                    message=f"Valid PDF with {page_count} pages",
-                    details={
-                        "size": Path(file_path).stat().st_size,
-                        "page_count": page_count,
-                        "is_encrypted": is_encrypted,
-                        "info": {k: v for k, v in info.items() if v},
-                        "outline_count": len(outline),
-                        "validated_with": "pypdf2",
-                    },
+                    message=(
+                        f"Valid PDF with {num_pages} pages "
+                        f"({dimensions})"
+                    ),
+                    details=metadata,
                 )
 
         except PyPDF2.PdfReadError as e:
@@ -142,7 +165,9 @@ class PdfValidator(BaseValidator):
 
     @classmethod
     def _extract_outline(
-        cls, outline_items: list, level: int = 0
+        cls,
+        outline_items: List[Any],
+        level: int = 0,
     ) -> List[Dict[str, Any]]:
         """Extract outline items recursively."""
         result = []
@@ -167,7 +192,9 @@ class PdfValidator(BaseValidator):
         return result
 
     @classmethod
-    def get_page_count(cls, file_path: str) -> Tuple[bool, int, str]:
+    def get_page_count(
+        cls, file_path: str
+    ) -> Tuple[bool, int, str]:
         """Get the number of pages in a PDF file.
 
         Args:
@@ -191,7 +218,9 @@ class PdfValidator(BaseValidator):
             return False, 0, f"Error getting page count: {str(e)}"
 
     @classmethod
-    def is_encrypted(cls, file_path: str) -> Tuple[bool, bool, str]:
+    def is_encrypted(
+        cls, file_path: str
+    ) -> Tuple[bool, bool, str]:
         """Check if a PDF file is encrypted.
 
         Args:

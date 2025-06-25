@@ -123,15 +123,15 @@ try:
     register_generator(["tar"])(generate_tar_file)
     register_generator(["tar.gz", "tgz"])(generate_tar_file)
 
-    # Import and register image generator
-    from .image import generate_image_file
+    # Import and register SVG generator
+    from .image.svg_generator import generate_svg
 
-    register_generator(["svg"])(generate_image_file)
+    register_generator(["svg"])(generate_svg)
 
     # Import and register PDF generator
-    from .pdf import generate_pdf
+    from .pdf import generate_pdf_file
 
-    register_generator(["pdf"])(generate_pdf)
+    register_generator(["pdf"])(generate_pdf_file)
     
     # Import and register config generator
     from .config import ConfigGenerator

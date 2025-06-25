@@ -11,8 +11,7 @@ from typing import TYPE_CHECKING
 
 # Check if Pillow is available
 try:
-    from PIL import Image, ImageDraw, ImageFont  # noqa: F401
-
+    from PIL import Image, ImageDraw, ImageFont
     PILLOW_AVAILABLE = True
 except ImportError:
     PILLOW_AVAILABLE = False
@@ -20,16 +19,14 @@ except ImportError:
 # Check if NumPy is available
 try:
     import numpy as np  # type: ignore
-
     NUMPY_AVAILABLE = True
 except ImportError:
     NUMPY_AVAILABLE = False
-    np = None
+    np = None  # type: ignore
 
 # Check if moviepy is available
 try:
-    from moviepy.editor import CompositeVideoClip, ImageClip, TextClip  # type: ignore
-
+    from moviepy.editor import CompositeVideoClip, ImageClip, TextClip  # type: ignore # noqa: F401
     MOVIEPY_AVAILABLE = True
 except ImportError:
     MOVIEPY_AVAILABLE = False
@@ -208,57 +205,47 @@ def generate_video_file(
         ImportError: If required dependencies are not installed
         RuntimeError: If video generation fails
     """
-    if not PILLOW_AVAILABLE:
+    if not PILLOW_AVAILABLE or not NUMPY_AVAILABLE:
         raise ImportError(
-            "Pillow is required for video generation. "
-            "Install with: pip install pillow"
-        )
-
-    if not NUMPY_AVAILABLE:
-        raise ImportError(
-            "NumPy is required for video generation. " "Install with: pip install numpy"
+            "Video generation requires Pillow and numpy. "
+            "Install with: pip install pillow numpy"
         )
 
     # Ensure output directory exists
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Try moviepy first
-    try:
-        if _generate_video_with_moviepy(content, output_path, duration, fps):
-            return output_path
-    except ImportError as e:
-        print(f"Note: {e}", file=sys.stderr)
+    # Try ffmpeg first
+    if _generate_video_with_ffmpeg(content, output_path, duration, fps):
+        return output_path
 
-    # Fall back to ffmpeg if moviepy fails or is not available
-    try:
-        if _generate_video_with_ffmpeg(content, output_path, duration, fps):
-            return output_path
-    except Exception as e:
-        print(f"FFmpeg error: {e}", file=sys.stderr)
-        error_msg = (
-            "Failed to generate video. Make sure you have either moviepy or ffmpeg "
-            "installed.\nInstall with: pip install moviepy numpy pillow\n"
-            "Or install ffmpeg: https://ffmpeg.org/download.html\n"
-            "Video generation failed. Please check that you have ffmpeg installed "
-            "and available in your system PATH."
-        )
-        raise RuntimeError(error_msg) from e
+    # Fall back to moviepy if available
+    if MOVIEPY_AVAILABLE and _generate_video_with_moviepy(
+        content, output_path, duration, fps
+    ):
+        return output_path
 
+    error_msg = (
+        "Failed to generate video. Make sure you have either moviepy or ffmpeg "
+        "installed.\nInstall with: pip install moviepy numpy pillow\n"
+        "Or install ffmpeg: https://ffmpeg.org/download.html\n"
+        "Video generation failed. Please check that you have ffmpeg installed "
+        "and available in your system PATH."
+    )
+    raise RuntimeError(error_msg)
+
+
+# Import registration function at the end to avoid circular imports
+from .registration import register_generator  # noqa: E402
 
 # Register the video generator if dependencies are available
 if PILLOW_AVAILABLE and NUMPY_AVAILABLE:
-    register_generator_directly(  # type: ignore
-        ["mp4", "avi", "mov", "mkv"],
-        generate_video_file,
-        requires=["Pillow", "numpy"],
-        description="Generate video files with text content",
-    )
+    register_generator(["mp4", "avi", "mov", "mkv"])(generate_video_file)
 else:
-    # Register a placeholder that will raise an informative error
-    register_generator_directly(  # type: ignore
-        ["mp4", "avi", "mov", "mkv"],
-        None,
-        requires=["Pillow", "numpy"],
-        description="Generate video files with text content "
-        "(requires Pillow and numpy)",
-    )
+    # Register a placeholder that will raise an informative error when used
+    def _video_not_available(*args, **kwargs):
+        raise ImportError(
+            "Video generation requires Pillow and numpy. "
+            "Install with: pip install pillow numpy"
+        )
+    
+    register_generator(["mp4", "avi", "mov", "mkv"])(_video_not_available)
