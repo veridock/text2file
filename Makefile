@@ -83,6 +83,11 @@ lint:
 	poetry run mypy src/ tests/
 	@echo -e "$(GREEN)Linting complete!$(NC)"
 
+# List all supported file extensions
+list:
+	@echo -e "$(BLUE)Supported file extensions:$(NC)"
+	@poetry run python scripts/list_extensions.py | sort | xargs -n 1 echo "  - "
+
 # Install dependencies
 install-deps:
 	@echo -e "$(BLUE)Installing converter dependencies...$(NC)"

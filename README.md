@@ -39,7 +39,7 @@ A powerful utility to generate test files in various formats from text content. 
   - **Text**: `.txt`, `.md`, `.html`, `.css`, `.js`, `.py`, `.json`, `.csv`
   - **Documents**: `.pdf`, `.docx`, `.odt`
   - **Spreadsheets**: `.xlsx`
-  - **Images**: `.jpg`, `.jpeg`, `.png`, `.bmp`, `.gif`
+  - **Images**: `.jpg`, `.jpeg`, `.png`, `.bmp`, `.gif`, `.svg`
   - **Archives**: `.zip`, `.tar`, `.tar.gz`, `.tgz`
 - ✅ File validation to ensure generated files are not corrupted
 - 🔄 Clean up invalid files with a single command
@@ -94,6 +94,10 @@ text2file [COMMAND] [OPTIONS]
 ### Examples
 
 #### Generate a text file
+```bash
+text2file "Hello, World!" txt
+```
+
 ```bash
 text2file generate --content "Hello, World!" --extension txt
 ```
@@ -262,6 +266,14 @@ text2file generate --content "Sample image content" --extension jpg --width 800 
 #### PNG (.png)
 ```bash
 text2file generate --content "Sample image content" --extension png --width 800 --height 600
+```
+
+#### SVG Image (.svg)
+```bash
+text2file generate --content "Sample SVG" --extension svg
+
+# With custom dimensions (width x height)
+text2file generate --content "Custom Size" --extension svg --width 400 --height 200
 ```
 
 ### Archives

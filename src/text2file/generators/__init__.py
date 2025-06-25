@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Set
 
+from .image import svg_generator  # noqa: F401
 from .image_set import ImageSetGenerator
 from .validators import (
     FileValidator,
@@ -198,11 +199,13 @@ def get_generator(extension: str) -> Optional[GeneratorFunc]:
 # Import other generators after defining the registration system
 print("Importing other generators...", file=sys.stderr)
 from .archives import *  # noqa: F401, F403
-from .images import *  # noqa: F401, F403
+from .image import *  # noqa: F401, F403
+from .image_set import *  # noqa: F401, F403
+from .image import svg_generator  # noqa: F401
 from .office import *  # noqa: F401, F403
 from .pdf import *  # noqa: F401, F403
-
-# After all imports, print final state
+from .text import *  # noqa: F401, F403
+from .video import *  # noqa: F401, F403
 print(f"Final registered generators: {list(_generators.keys())}", file=sys.stderr)
 print(f"Final supported extensions: {sorted(SUPPORTED_EXTENSIONS)}", file=sys.stderr)
 
