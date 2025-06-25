@@ -1,0 +1,4 @@
+# ShellCheck configuration
+disable=SC2034  # Unused variables (for templates)
+disable=SC1091  # Source file not found (for dynamic sourcing)
+

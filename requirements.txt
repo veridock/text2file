@@ -1,0 +1,8 @@
+# Python dependencies for converters
+Pillow>=10.0.0
+opencv-python>=4.8.0
+reportlab>=4.0.0
+python-docx>=0.8.11
+openpyxl>=3.1.0
+fpdf2>=2.7.5
+
