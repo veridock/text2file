@@ -1,10 +1,12 @@
 """Validator for shell script files."""
 
+"""Validator for shell script files."""
+
 import re
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 
 from ...utils.file_utils import get_file_extension, is_binary_file
 from ..base import BaseValidator, ValidationResult
@@ -143,7 +145,7 @@ class ShellScriptValidator(BaseValidator):
             if re.search(pattern, content, re.MULTILINE):
                 pattern_matches += 1
 
-        if pattern_matches < 2:  # Require at least 2 shell patterns
+        if pattern_matches < 2:
             return ValidationResult(
                 is_valid=False,
                 message=(
@@ -163,13 +165,14 @@ class ShellScriptValidator(BaseValidator):
                 details=details,
             )
         else:
-            details[
-                "info"
-            ] = "shellcheck is not installed. Install it for more thorough validation."
+            details["info"] = (
+                "shellcheck is not installed, skipping advanced validation"
+            )
 
-        # If we got here, the file is valid
         return ValidationResult(
-            is_valid=True, message=f"Valid shell script: {file_path}", details=details
+            is_valid=True,
+            message="Shell script validation passed",
+            details=details,
         )
 
 
