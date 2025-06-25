@@ -2,6 +2,8 @@
 venv
 env
 .venv
+dist
+.tox
 venv/
 env/
 generated*.*
