@@ -4,8 +4,7 @@ import random
 import re
 import string
 import textwrap
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import List, Tuple
 
 
 def wrap_text(text: str, width: int = 80, **kwargs) -> str:
@@ -28,7 +27,10 @@ def wrap_text(text: str, width: int = 80, **kwargs) -> str:
 
 
 def truncate_text(
-    text: str, max_length: int = 100, ellipsis: str = "...", words: bool = False
+    text: str,
+    max_length: int = 100,
+    ellipsis: str = "...",
+    words: bool = False
 ) -> str:
     """Truncate text to a maximum length.
 

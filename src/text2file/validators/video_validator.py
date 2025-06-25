@@ -1,19 +1,19 @@
 """Validators for video file formats."""
 
-"""Validators for video file formats."""
-
 import json
+import os
 import subprocess
 from pathlib import Path
 from typing import Optional
+
+import cv2  # type: ignore
 
 from .base import BaseValidator, ValidationResult
 
 # Try to import OpenCV for video validation
 HAS_OPENCV = False
 try:
-    import cv2
-
+    import cv2  # noqa: F811
     HAS_OPENCV = True
 except ImportError:
     pass
@@ -109,17 +109,21 @@ class VideoValidator(BaseValidator):
     def _validate_with_opencv(cls, file_path: str) -> ValidationResult:
         """Validate a video file using OpenCV."""
         if not HAS_OPENCV:
-            return ValidationResult(is_valid=False, message="OpenCV is not available")
+            return ValidationResult(
+                is_valid=False,
+                message="OpenCV is not available"
+            )
 
         try:
-            # Open the video file
-            cap = cv2.VideoCapture(file_path)
-
+            # Check file readability first
             if not os.access(file_path, os.R_OK):
                 return ValidationResult(
                     is_valid=False,
                     message=f"File not readable: {file_path}"
                 )
+
+            # Open the video file
+            cap = cv2.VideoCapture(file_path)
 
             if not cap.isOpened():
                 return ValidationResult(
@@ -145,7 +149,10 @@ class VideoValidator(BaseValidator):
 
             return ValidationResult(
                 is_valid=True,
-                message=f"Valid video: {width}x{height} @ {fps:.2f} fps, {frame_count} frames",
+                message=(
+                    f"Valid video: {width}x{height} @ {fps:.2f} fps, "
+                    f"{frame_count} frames"
+                ),
                 details={
                     "width": width,
                     "height": height,
