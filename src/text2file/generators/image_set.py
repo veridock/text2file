@@ -3,7 +3,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Dict, List, Optional, TypedDict, Union
+from typing import List, Optional, TypedDict, Union
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -66,9 +66,12 @@ class ImageSetGenerator(BaseGenerator):
                 # Create the image
                 if base_image and os.path.exists(base_image):
                     # Resize the base image
-                    img = Image.open(base_image)
-                    img = img.resize((width, height), Image.Resampling.LANCZOS)
-                    img.save(output_path)
+                    with Image.open(base_image) as img:
+                        img = img.resize(
+                            (width, height),
+                            Image.Resampling.LANCZOS
+                        )
+                        img.save(output_path)
                 else:
                     # Create a simple placeholder image
                     img = Image.new('RGB', (width, height), color=background_color)
@@ -83,10 +86,15 @@ class ImageSetGenerator(BaseGenerator):
                             font = ImageFont.load_default()
                         
                         # Calculate text position (centered)
-                        text_bbox = draw.textbbox((0, 0), text, font=font)
+                        text_bbox = draw.textbbox(
+                            (0, 0), text, font=font
+                        )
                         text_width = text_bbox[2] - text_bbox[0]
                         text_height = text_bbox[3] - text_bbox[1]
-                        position = ((width - text_width) // 2, (height - text_height) // 2)
+                        position = (
+                            (width - text_width) // 2,
+                            (height - text_height) // 2
+                        )
                         
                         draw.text(position, text, fill=text_color, font=font)
                     img.save(output_path)

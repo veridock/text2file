@@ -3,7 +3,7 @@
 import importlib
 import os
 from pathlib import Path
-from typing import Callable, Dict, List, Set
+from typing import Callable, Dict, List, Optional, Set
 
 from .image_set import ImageSetGenerator
 from .validators import (
