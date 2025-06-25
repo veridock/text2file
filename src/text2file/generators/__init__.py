@@ -49,9 +49,7 @@ __all__ = [
 ]
 
 
-def register_generator(
-    extensions: List[str]
-) -> Callable[[GeneratorFunc], GeneratorFunc]:
+def register_generator(extensions: List[str]):
     """Decorator to register a generator function for specific extensions.
     
     Args:
@@ -59,13 +57,10 @@ def register_generator(
             generator handles
     """
     def decorator(func: GeneratorFunc) -> GeneratorFunc:
-        print(f"Registering generator {func.__name__} for extensions: {extensions}", file=sys.stderr)
         for ext in extensions:
             ext_lower = ext.lower().lstrip('.')
-            print(f"  - Adding extension: {ext_lower}", file=sys.stderr)
             _generators[ext_lower] = func
             SUPPORTED_EXTENSIONS.add(ext_lower)
-        print(f"  Current generators: {_generators.keys()}", file=sys.stderr)
         return func
     return decorator
 
@@ -80,11 +75,7 @@ def get_generator(extension: str) -> Optional[GeneratorFunc]:
         Generator function or None if not found
     """
     ext = extension.lower().lstrip('.')
-    print(f"Looking up generator for extension: {ext!r}", file=sys.stderr)  # Debug
-    print(f"Available extensions: {sorted(_generators.keys())}", file=sys.stderr)  # Debug
-    generator = _generators.get(ext)
-    print(f"Found generator: {generator is not None}", file=sys.stderr)  # Debug
-    return generator
+    return _generators.get(ext)
 
 
 def generate_file(
@@ -124,20 +115,24 @@ def generate_file(
     filepath = output_dir / filename
     
     # Generate the file
-    return generator(content, filepath)
+    print("Importing generator modules...", file=sys.stderr)
 
+# First import the register_generator function
+from .base import register_generator
 
-print("Importing generator modules...", file=sys.stderr)
-
-# Import all generator modules to register them
-# Import base generators first
-print("Importing text generator...", file=sys.stderr)
+# Explicitly register the text generator
 try:
-    from .text import *  # noqa: F401, F403
-    print("Successfully imported text generator", file=sys.stderr)
+    print("Registering text generator...", file=sys.stderr)
+    from .text import generate_text_file
+    
+    # Manually register the text generator
+    register_generator(["txt", "md", "html", "css", "js", "py", "json", "csv"])(generate_text_file)
+    print("Successfully registered text generator", file=sys.stderr)
+    print(f"Registered extensions: {_generators.keys()}", file=sys.stderr)
 except ImportError as e:
-    print(f"Failed to import text generator: {e}", file=sys.stderr)
+    print(f"Failed to register text generator: {e}", file=sys.stderr)
 
+# Import other generators
 print("Importing other generators...", file=sys.stderr)
 from .images import *  # noqa: F401, F403
 from .office import *  # noqa: F401, F403
