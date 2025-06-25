@@ -3,11 +3,6 @@
 This module provides functions to generate video files with text content.
 It supports multiple video formats and can use either ffmpeg or moviepy as the backend.
 """
-"""Video file generation functionality.
-
-This module provides functions to generate video files with text content.
-It supports multiple video formats and can use either ffmpeg or moviepy as the backend.
-"""
 
 import subprocess
 import sys
@@ -22,6 +17,7 @@ if TYPE_CHECKING:
     from moviepy.editor import CompositeVideoClip, ImageClip, TextClip  # noqa: F401
     from numpy import ndarray  # noqa: F401
     from ..registration import register_generator  # noqa: F401
+    from typing import Any, Union  # noqa: F401
 
 # Third-party imports (make optional with try/except)
 try:
@@ -121,7 +117,8 @@ def _create_video_frame(
         except (IOError, OSError):
             pass  # Use default font
     
-    font = cast(Any, font)  # Type hint workaround
+    # Type hint workaround for font object
+    font = cast(Any, font)
     
     # Calculate text position (centered)
     if font is not None:
@@ -345,7 +342,7 @@ if all([
     register_generator(["mp4", "avi", "mov", "mkv"])(generate_video_file)
 else:
     # Register a placeholder that will raise an informative error when used
-    def _video_not_available(*args, **kwargs):  # type: ignore
+    def _video_not_available(*args, **kwargs):
         """Raise an informative error when video generation is not available.
         
         This function is registered as a placeholder when required dependencies
