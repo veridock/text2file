@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "text2file"
-version = "0.1.5"
+version = "0.1.6"
 description = "A utility to generate test files in various formats from text content"
 authors = ["Your Name <your.email@example.com>"]
 license = "MIT"
