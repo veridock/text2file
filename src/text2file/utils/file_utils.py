@@ -3,8 +3,10 @@
 import hashlib
 import mimetypes
 import os
+import re
 import shutil
 import tempfile
+import unicodedata
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -21,7 +23,9 @@ def get_file_extension(filename: str) -> str:
     return Path(filename).suffix.lstrip(".").lower()
 
 
-def get_mime_type(file_path: Union[str, Path]) -> Tuple[Optional[str], Optional[str]]:
+def get_mime_type(
+    file_path: Union[str, Path]
+) -> Tuple[Optional[str], Optional[str]]:
     """Get the MIME type of a file.
 
     Args:
@@ -33,7 +37,10 @@ def get_mime_type(file_path: Union[str, Path]) -> Tuple[Optional[str], Optional[
     return mimetypes.guess_type(str(file_path))
 
 
-def is_binary_file(file_path: Union[str, Path], chunk_size: int = 1024) -> bool:
+def is_binary_file(
+    file_path: Union[str, Path],
+    chunk_size: int = 1024
+) -> bool:
     """Check if a file is binary.
 
     Args:
@@ -45,59 +52,17 @@ def is_binary_file(file_path: Union[str, Path], chunk_size: int = 1024) -> bool:
     """
     file_path = Path(file_path)
 
-    # Check for common binary file extensions first (faster than reading content)
+    # Common binary file extensions (faster than reading content)
     binary_extensions = {
         # Images
-        "jpg",
-        "jpeg",
-        "png",
-        "gif",
-        "bmp",
-        "tiff",
-        "webp",
-        "ico",
-        "psd",
-        "svg",
+        *"jpg jpeg png gif bmp tiff webp ico psd svg".split(),
         # Archives
-        "zip",
-        "tar",
-        "gz",
-        "bz2",
-        "7z",
-        "rar",
-        "xz",
-        "z",
-        "lz",
-        "lzma",
-        "lzo",
+        *"zip tar gz bz2 7z rar xz z lz lzma lzo".split(),
         # Documents
-        "pdf",
-        "doc",
-        "docx",
-        "xls",
-        "xlsx",
-        "ppt",
-        "pptx",
-        "odt",
-        "ods",
-        "odp",
+        *"pdf doc docx xls xlsx ppt pptx odt ods odp".split(),
         # Audio/Video
-        "mp3",
-        "wav",
-        "ogg",
-        "flac",
-        "aac",
-        "wma",
-        "m4a",
-        "mp4",
-        "avi",
-        "mkv",
-        "mov",
-        "wmv",
-        "flv",
-        "webm",
-        "m4v",
-        "3gp",
+        *"mp3 wav ogg flac aac wma m4a mp4 avi mkv mov wmv flv webm m4v 3gp"
+        .split(),
         "mpg",
         "mpeg",
         "m2ts",
@@ -161,7 +126,9 @@ def is_binary_file(file_path: Union[str, Path], chunk_size: int = 1024) -> bool:
 
 
 def get_file_hash(
-    file_path: Union[str, Path], algorithm: str = "sha256", chunk_size: int = 65536
+    file_path: Union[str, Path],
+    algorithm: str = "sha256",
+    chunk_size: int = 65536,
 ) -> str:
     """Calculate the hash of a file.
 
@@ -188,7 +155,7 @@ def create_temp_file(
     prefix: str = None,
     dir: Union[str, Path] = None,
     text: bool = False,
-) -> str:
+) -> Path:
     """Create a temporary file and return its path.
 
     Args:
@@ -207,7 +174,7 @@ def create_temp_file(
     # Create the file
     fd, path = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=dir, text=text)
     os.close(fd)  # Close the file descriptor as we'll open it again later
-    return path
+    return Path(path)
 
 
 def create_temp_dir(prefix: str = None, dir: Union[str, Path] = None) -> str:
@@ -259,7 +226,9 @@ def ensure_directory(directory: Union[str, Path], mode: int = 0o755) -> Path:
 
 
 def copy_file(
-    src: Union[str, Path], dst: Union[str, Path], overwrite: bool = False
+    src: Union[str, Path],
+    dst: Union[str, Path],
+    overwrite: bool = False,
 ) -> bool:
     """Copy a file from src to dst.
 
@@ -328,12 +297,21 @@ def get_file_info(file_path: Union[str, Path]) -> Dict[str, Any]:
 
 
 def _format_size(size: int, decimals: int = 2) -> str:
-    """Format a size in bytes to a human-readable string."""
-    for unit in ["B", "KB", "MB", "GB", "TB"]:
+    """Format a size in bytes to a human-readable string.
+    
+    Args:
+        size: Size in bytes
+        decimals: Number of decimal places
+        
+    Returns:
+        Formatted size string with unit
+    """
+    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
         if size < 1024.0:
-            return f"{size:.{decimals}f} {unit}"
-        size /= 1024.0
-    return f"{size:.{decimals}f} PB"
+            break
+        if unit != 'TB':  # Don't divide beyond TB
+            size /= 1024.0
+    return f"{size:.{decimals}f} {unit}"
 
 
 def find_files(
@@ -348,7 +326,7 @@ def find_files(
         directory: Directory to search in
         pattern: Glob pattern to match
         recursive: Whether to search recursively
-        case_sensitive: Whether the search should be case-sensitive
+        case_sensitive: Whether search should be case-sensitive
 
     Returns:
         List of matching file paths
@@ -392,31 +370,25 @@ def sanitize_filename(filename: str, replace_with: str = "_") -> str:
     Returns:
         Sanitized filename
     """
-    # Characters not allowed in filenames on various operating systems
-    # This is a conservative list that should work on most systems
-    invalid_chars = '<>:"/\\|?*\x00-\x1f'
 
-    # Replace invalid characters
-    for char in invalid_chars:
-        filename = filename.replace(char, replace_with)
+    # Normalize unicode characters
+    normalized = unicodedata.normalize('NFKD', str(filename))
+    ascii_str = normalized.encode('ascii', 'ignore').decode('ascii')
 
-    # Remove leading/trailing spaces and dots (not allowed on Windows)
-    filename = filename.strip(". ")
+    # Replace invalid characters and whitespace
+    no_special = re.sub(r'[^\w\s-]', replace_with, ascii_str)
+    no_whitespace = re.sub(r'[\s]+', replace_with, no_special)
+    stripped = no_whitespace.strip(replace_with)
 
-    # Ensure the filename is not empty
-    if not filename:
-        filename = f"unnamed{replace_with}file"
+    # Handle empty result
+    if not stripped:
+        return f"unnamed{replace_with}file"
 
-    # Truncate to a reasonable length
-    max_length = 255  # Common filesystem limit
-    if len(filename) > max_length:
-        # Keep the extension if possible
-        name, ext = os.path.splitext(filename)
-        if ext:
-            # Truncate the name part, leaving room for the extension
-            name = name[: max_length - len(ext) - 1]
-            filename = f"{name}{ext}"
-        else:
-            filename = filename[:max_length]
+    # Limit length to 255 chars, preserving extension
+    max_len = 255
+    if len(stripped) > max_len:
+        name, ext = os.path.splitext(stripped)
+        ext = ext[:max(0, max_len - len(name) - 1)]
+        stripped = name[:max(0, max_len - len(ext) - 1)] + ext
 
-    return filename
+    return stripped
