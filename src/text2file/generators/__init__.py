@@ -127,18 +127,30 @@ def generate_file(
     return generator(content, filepath)
 
 
+print("Importing generator modules...", file=sys.stderr)
+
 # Import all generator modules to register them
-# This will automatically discover and register all generators defined in this package
+# Import base generators first
+print("Importing text generator...", file=sys.stderr)
+try:
+    from .text import *  # noqa: F401, F403
+    print("Successfully imported text generator", file=sys.stderr)
+except ImportError as e:
+    print(f"Failed to import text generator: {e}", file=sys.stderr)
+
+print("Importing other generators...", file=sys.stderr)
+from .images import *  # noqa: F401, F403
+from .office import *  # noqa: F401, F403
+from .archives import *  # noqa: F401, F403
+from .pdf import *  # noqa: F401, F403
+
+# Then import remaining modules
 for module in os.listdir(os.path.dirname(__file__)):
-    if module.endswith('.py') and not module.startswith('_'):
+    if module.endswith('.py') and not module.startswith('_') and module not in [
+        'text.py', 'images.py', 'office.py', 'archives.py', 'pdf.py', 'base.py', 'validators.py'
+    ]:
         module_name = f"{__package__}.{module[:-3]}"
         try:
             importlib.import_module(module_name)
         except ImportError as e:
-            print(f"Warning: Could not import {module_name}: {e}")
-
-# Import base generators
-from .text import *  # noqa: F401, F403
-from .images import *  # noqa: F401, F403
-from .office import *  # noqa: F401, F403
-from .archives import *  # noqa: F401, F403
+            print(f"Warning: Could not import {module_name}: {e}", file=sys.stderr)

@@ -4,8 +4,10 @@ import csv
 import json
 from pathlib import Path
 
+import sys
 from ..generators import register_generator
 
+print("Registering text generator...", file=sys.stderr)
 
 @register_generator(["txt", "md", "html", "css", "js", "py", "json", "csv"])
 def generate_text_file(content: str, output_path: Path, **kwargs) -> Path:
