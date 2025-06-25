@@ -23,8 +23,14 @@ def _parse_config_content(content: str) -> Dict[str, Any]:
     Raises:
         ValueError: If the content cannot be parsed
     """
+    import logging
+    
+    # Debug log the original content
+    logging.debug(f"Original content: {content!r}")
+    
     content = content.strip()
     if not content:
+        logging.debug("Empty content after strip, returning empty dict")
         return {}
     
     # Clean up the content by removing extra indentation
@@ -38,12 +44,15 @@ def _parse_config_content(content: str) -> Dict[str, Any]:
                 indent = len(line) - len(stripped)
                 min_indent = min(min_indent, indent)
         
+        logging.debug(f"Minimum indentation: {min_indent}")
+        
         # Remove the minimum indentation from all non-empty lines
         if min_indent > 0:
             content = '\n'.join(
                 line[min_indent:] if line.strip() else line
                 for line in lines
             )
+            logging.debug(f"Content after removing indentation: {content!r}")
         
     # Try parsing as JSON
     if content.startswith('{') or content.startswith('['):
@@ -54,18 +63,22 @@ def _parse_config_content(content: str) -> Dict[str, Any]:
     
     # Try parsing as YAML
     try:
+        logging.debug("Trying to parse as YAML")
         # Try with safe_load first
         result = yaml.safe_load(content)
+        logging.debug(f"Result from yaml.safe_load: {result!r}")
         if result is not None:  # Only return if we got a valid result
             return result
             
         # If we got None but content isn't empty, try with full_load
         if content.strip():
+            logging.debug("Trying yaml.full_load")
             result = yaml.full_load(content)
+            logging.debug(f"Result from yaml.full_load: {result!r}")
             if result is not None:
                 return result
-    except (yaml.YAMLError, AttributeError):
-        pass
+    except (yaml.YAMLError, AttributeError) as e:
+        logging.debug(f"YAML parsing error: {e}")
         
     # If we get here, try parsing as INI-style
     config = {}
