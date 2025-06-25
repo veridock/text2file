@@ -20,17 +20,28 @@ BLUE := \033[0;34m
 NC := \033[0m # No Color
 
 # Help system
-.PHONY: help list-libraries list-formats search benchmark validate format lint install-dev
+.PHONY: help list-libraries list-formats search benchmark validate format lint install-dev push publish
 help:
 	@echo -e "$(BLUE)Universal File Converter System$(NC)"
-	@echo "Usage: make [library] [from_format] [to_format] [input_file] [output_file]"
 	@echo ""
 	@echo "Available commands:"
 	@echo "  help              - Show this help"
+	@echo "  install           - Install the package in development mode"
+	@echo "  install-dev       - Install development dependencies"
+	@echo "  format            - Format code using black and isort"
+	@echo "  lint              - Lint code using flake8 and mypy"
+	@echo "  test              - Run tests with pytest"
+	@echo "  list              - List all supported file extensions"
+	@echo "  push              - Push changes to git (runs tests and linting first)"
+	@echo "  publish           - Publish package to PyPI (creates git tag and pushes changes)"
 	@echo "  check-conflicts   - Check format conversion conflicts"
 	@echo ""
-	@echo "Interactive conflict resolution:"
-	@echo "  ./help.sh [from_format] [to_format]"
+	@echo "Examples:"
+	@echo "  make format       # Format the code"
+	@echo "  make lint         # Run linters"
+	@echo "  make test         # Run tests"
+	@echo "  make push         # Push changes to git"
+	@echo "  make publish      # Publish to PyPI"
 
 # Conversion function
 define convert_file
@@ -93,13 +104,34 @@ install-deps:
 	@echo -e "$(BLUE)Installing converter dependencies...$(NC)"
 	@bash $(CONFIG_DIR)/install_dependencies.sh
 
+# Push changes to git after running tests and linting
+push: lint test
+	@echo -e "$(GREEN)✓ All tests and linting passed!$(NC)"
+	@echo -e "\n$(BLUE)Staging changes...$(NC)"
+	git add .
+	@if git diff --cached --quiet; then \
+		echo -e "$(YELLOW)No changes to commit.$(NC)"; \
+	else \
+		git commit -m "Update package"; \
+	fi
+	@echo -e "\n$(BLUE)Pushing to git...$(NC)"
+	git push
+	@echo -e "\n$(GREEN)✓ Changes pushed to git$(NC)"
+	@echo -e "\n$(BLUE)Next steps:$(NC)"
+	@echo -e "1. To publish a new version to PyPI, run 'make publish'"
+	@echo -e "   This will:\n   - Update the version in pyproject.toml\n   - Create a git tag\n   - Build and publish the package"
+
 # Publish the package to PyPI
 publish:
-	@echo "Building package..."
+	@echo -e "$(BLUE)Building and publishing package...$(NC)"
 	poetry version patch
+	git add pyproject.toml
+	git commit -m "Bump version"
+	git tag -a v$$(poetry version -s) -m "Version $$(poetry version -s)"
+	git push --follow-tags
 	poetry build
-	@echo "\nPublishing to PyPI..."
 	poetry publish
+	@echo -e "\n$(GREEN)✓ Package published to PyPI!$(NC)"
 
 # Prevent make from interpreting arguments as targets
 %:

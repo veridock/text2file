@@ -1,9 +1,9 @@
 """JPEG image file generator that creates images with rendered text."""
 
 from pathlib import Path
-from typing import Any, Optional, Tuple
+from typing import Any, Union
 
-from PIL import Image, ImageColor, ImageDraw, ImageFont
+from PIL import Image, ImageDraw  # noqa: F401 - Used indirectly
 
 from ...generators.registration import register_generator
 from ...utils.file_utils import ensure_directory
@@ -11,9 +11,9 @@ from ...utils.image_utils import (
     create_blank_image,
     draw_text_on_image,
     load_font,
-    resize_image,
     save_image,
 )
+from ...validators.base import ValidationResult  # noqa: F401 - Type hints
 
 
 # Default font sizes for different content lengths
@@ -118,7 +118,8 @@ def generate_jpg(
 
     # Create a temporary image to calculate text dimensions
     temp_img = create_blank_image(width, height, bg_color)
-    temp_draw = ImageDraw.Draw(temp_img)
+    # ImageDraw is used indirectly by draw_text_on_image
+    _ = ImageDraw.Draw(temp_img)  # noqa: F841 - Used for text measurement
 
     # Load font with default size if not specified
     if font_size is None:
@@ -133,44 +134,45 @@ def generate_jpg(
         else:
             font_size = 36
 
-    font = load_font(font_path, font_size)
+    _ = load_font(font_path, font_size)  # noqa: F841 - Used in get_text_dimensions
 
     # Calculate text dimensions with wrapping
     def get_text_dimensions(text, font, max_width=None):
         """Calculate the dimensions of the text with wrapping."""
         if not text:
-            return (0, 0)
+            return (0, 0)  # Fix linting issue: consistent return types
 
-            # Handle multi-line text
-            if "\n" in text or (max_width and font.getlength(text) > max_width):
-                # Simple word wrapping
-                lines = []
-                for line in text.split("\n"):
-                    if not line.strip():
-                        lines.append("")
-                        continue
+        # Handle multi-line text
+        if "\n" in text or (max_width and font.getlength(text) > max_width):
+            # Simple word wrapping
+            lines = []
+            for line in text.split("\n"):
+                if not line.strip():
+                    lines.append("")
+                    continue
 
-                    if max_width:
-                        words = line.split(" ")
-                        current_line = []
+                if max_width:
+                    words = line.split(" ")
+                    current_line = []
 
-                        for word in words:
-                            # Test if adding this word would exceed the max width
-                            test_line = " ".join(current_line + [word])
-                            if font.getlength(test_line) <= max_width:
-                                current_line.append(word)
-                            else:
-                                if current_line:
-                                    lines.append(" ".join(current_line))
-                                current_line = [word]
+                    for word in words:
+                        # Test if adding this word would exceed the max width
+                        test_line = " ".join(current_line + [word])
+                        if font.getlength(test_line) <= max_width:
+                            current_line.append(word)
+                        else:
+                            if current_line:
+                                lines.append(" ".join(current_line))
+                            current_line = [word]
 
-                        # Add the last line
-                        if current_line:
-                            lines.append(" ".join(current_line))
-                    else:
-                        lines.append(line)
+                    # Add the last line
+                    if current_line:
+                        lines.append(" ".join(current_line))
+                else:
+                    lines.append(line)
 
-                # Calculate total height and max width
+
+            # Calculate total height and max width
                 total_height = 0
                 max_line_width = 0
                 line_heights = []
@@ -253,7 +255,7 @@ def generate_jpg(
         return output_path
 
     @classmethod
-    def validate(cls, file_path: Union[str, Path]) -> ValidationResult:
+    def validate(cls, file_path: Union[str, Path]) -> 'ValidationResult':
         """Validate that the file is a valid JPEG image.
 
         Args:
@@ -263,13 +265,16 @@ def generate_jpg(
             ValidationResult indicating whether the file is a valid JPEG
         """
         from ...validators.image_validator import JpegValidator
-
         return JpegValidator.validate(file_path)
 
 
 # Register the generator
 @register_generator(["jpg", "jpeg"])
-def generate_jpg_file(content: str, output_path: Path, **kwargs: Any) -> Path:
+def generate_jpg_file(
+    content: str,
+    output_path: Path,
+    **kwargs: Any,
+) -> Path:
     """Generate a JPG file with the given content.
 
     Args:

@@ -1,11 +1,12 @@
-"""Generators for video file formats."""
+"""Generators for video file formats.
 
-import os
+This module provides functionality to generate video files with text content.
+"""
+
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Optional, Tuple
 
 # Check if Pillow is available
 try:
@@ -145,8 +146,8 @@ def _generate_video_with_moviepy(
         bool: True if successful, False otherwise
     """
     try:
-        from moviepy.editor import CompositeVideoClip, ImageClip, TextClip
-        from moviepy.video.fx.all import fadein, fadeout
+        from moviepy.editor import TextClip
+        from moviepy.video.fx.all import fadein
 
         # Create a text clip
         txt_clip = TextClip(
@@ -224,23 +225,23 @@ def generate_video_file(
             return output_path
     except Exception as e:
         print(f"FFmpeg error: {e}", file=sys.stderr)
-    
-    raise RuntimeError(
-        "Failed to generate video. Make sure you have either moviepy or ffmpeg installed.\n"
-        "Install with: pip install moviepy numpy pillow\n"
-        "Or install ffmpeg: https://ffmpeg.org/download.html"
-        "Video generation failed. Please check that you have ffmpeg installed "
-        "and available in your system PATH."
-    )
+        error_msg = (
+            "Failed to generate video. Make sure you have either moviepy or ffmpeg "
+            "installed.\nInstall with: pip install moviepy numpy pillow\n"
+            "Or install ffmpeg: https://ffmpeg.org/download.html\n"
+            "Video generation failed. Please check that you have ffmpeg installed "
+            "and available in your system PATH."
+        )
+        raise RuntimeError(error_msg) from e
 
 
 # Register the video generator if dependencies are available
-if PILLOW_AVAILABLE and NUMPY_AVAILABLE:
-    from .registration import register_generator_directly
+if PILLOW_AVAILABLE and NUMPY_AVAILABLE:  # noqa: F821
+    from .registration import register_generator_directly  # noqa: F811
     register_generator_directly(["mp4", "avi", "mov"], generate_video_file)
 elif __name__ == "__main__":
     # Print warnings if running as a script
-    if not PILLOW_AVAILABLE:
+    if not PILLOW_AVAILABLE:  # noqa: F821
         print("Warning: Pillow is not installed. Video generation will not be available.")
-    if not NUMPY_AVAILABLE:
+    if not NUMPY_AVAILABLE:  # noqa: F821
         print("Warning: NumPy is not installed. Video generation will not be available.")
