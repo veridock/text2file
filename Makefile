@@ -20,7 +20,7 @@ BLUE := \033[0;34m
 NC := \033[0m # No Color
 
 # Help system
-.PHONY: help list-libraries list-formats search benchmark validate
+.PHONY: help list-libraries list-formats search benchmark validate format lint install-dev
 help:
 	@echo -e "$(BLUE)Universal File Converter System$(NC)"
 	@echo "Usage: make [library] [from_format] [to_format] [input_file] [output_file]"
@@ -50,6 +50,38 @@ define convert_file
 	echo -e "$(GREEN)Converting with $(1):$(NC) $$INPUT_FILE ($$FROM_FORMAT) -> $$OUTPUT_FILE ($$TO_FORMAT)"; \
 	bash $(CONVERTER_DIR)/$(1).sh "$$FROM_FORMAT" "$$TO_FORMAT" "$$INPUT_FILE" "$$OUTPUT_FILE"
 endef
+
+# Install the package in development mode
+install:
+	@echo -e "$(BLUE)Installing text2file in development mode...$(NC)"
+	poetry install
+	@echo -e "\n$(GREEN)Installation complete! You can now use the 'text2file' command.$(NC)"
+
+# Install development dependencies
+install-dev:
+	@echo -e "$(BLUE)Installing development dependencies...$(NC)"
+	poetry add --group dev \
+		"black>=22.3.0,<23.0.0" \
+		"isort>=5.10.1,<6.0.0" \
+		"flake8>=5.0.0,<6.0.0" \
+		"mypy>=0.971,<1.0.0" \
+		"pytest>=7.0.0,<8.0.0" \
+		"pytest-cov>=3.0.0,<4.0.0"
+	@echo -e "$(GREEN)Development dependencies installed!$(NC)"
+
+# Format code using black and isort
+format:
+	@echo -e "$(BLUE)Formatting code...$(NC)"
+	poetry run black src/ tests/
+	poetry run isort src/ tests/
+	@echo -e "$(GREEN)Formatting complete!$(NC)"
+
+# Lint code using flake8 and mypy
+lint:
+	@echo -e "$(BLUE)Linting code...$(NC)"
+	poetry run flake8 src/ tests/
+	poetry run mypy src/ tests/
+	@echo -e "$(GREEN)Linting complete!$(NC)"
 
 # Install dependencies
 install-deps:

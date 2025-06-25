@@ -1,127 +1,110 @@
 """Validators for different file formats."""
 
-from .base import (
-    BaseValidator,
-    ValidationResult,
-    get_validator,
+from .archive_validator import (
+    ArchiveValidator,
+    Bzip2Validator,
+    GzipValidator,
+    TarBz2Validator,
+    TarGzValidator,
+    TarValidator,
+    ZipValidator,
 )
-
-from .text_validator import (
-    TextFileValidator,
-    JsonFileValidator,
-    CsvFileValidator,
-    XmlFileValidator,
-    YamlFileValidator,
-    HtmlFileValidator,
-    CssFileValidator,
-    JavaScriptFileValidator,
-    PythonFileValidator,
-    ShellScriptValidator,
-)
-
+from .base import BaseValidator, ValidationResult, get_validator
 from .image_validator import (
+    BmpValidator,
+    GifValidator,
     ImageValidator,
     JpegValidator,
     PngValidator,
-    GifValidator,
-    BmpValidator,
-    WebPValidator,
     SvgValidator,
+    WebPValidator,
 )
-
-from .archive_validator import (
-    ArchiveValidator,
-    ZipValidator,
-    TarValidator,
-    TarGzValidator,
-    TarBz2Validator,
-    GzipValidator,
-    Bzip2Validator,
-)
-
-from .pdf_validator import PdfValidator
-
 from .office_validator import (
-    OfficeValidator,
-    DocxValidator,
-    XlsxValidator,
-    PptxValidator,
-    OdtValidator,
-    OdsValidator,
-    OdpValidator,
     DocValidator,
-    XlsValidator,
+    DocxValidator,
+    OdpValidator,
+    OdsValidator,
+    OdtValidator,
+    OfficeValidator,
     PptValidator,
+    PptxValidator,
+    XlsValidator,
+    XlsxValidator,
 )
-
-from .video_validator import (
-    VideoValidator,
-    Mp4Validator,
+from .pdf_validator import PdfValidator
+from .text_validator import (
+    CssFileValidator,
+    CsvFileValidator,
+    HtmlFileValidator,
+    JavaScriptFileValidator,
+    JsonFileValidator,
+    PythonFileValidator,
+    ShellScriptValidator,
+    TextFileValidator,
+    XmlFileValidator,
+    YamlFileValidator,
+)
+from .video_validator import (  # Add other video validators as needed
     AviValidator,
-    MovValidator,
     MkvValidator,
+    MovValidator,
+    Mp4Validator,
+    VideoValidator,
     WebmValidator,
-    # Add other video validators as needed
 )
 
 # Export all validators
 __all__ = [
     # Base
-    'BaseValidator',
-    'ValidationResult',
-    'get_validator',
-    
+    "BaseValidator",
+    "ValidationResult",
+    "get_validator",
     # Text
-    'TextFileValidator',
-    'JsonFileValidator',
-    'CsvFileValidator',
-    'XmlFileValidator',
-    'YamlFileValidator',
-    'HtmlFileValidator',
-    'CssFileValidator',
-    'JavaScriptFileValidator',
-    'PythonFileValidator',
-    'ShellScriptValidator',
-    
+    "TextFileValidator",
+    "JsonFileValidator",
+    "CsvFileValidator",
+    "XmlFileValidator",
+    "YamlFileValidator",
+    "HtmlFileValidator",
+    "CssFileValidator",
+    "JavaScriptFileValidator",
+    "PythonFileValidator",
+    "ShellScriptValidator",
     # Images
-    'ImageValidator',
-    'JpegValidator',
-    'PngValidator',
-    'GifValidator',
-    'BmpValidator',
-    'WebPValidator',
-    'SvgValidator',
-    
+    "ImageValidator",
+    "JpegValidator",
+    "PngValidator",
+    "GifValidator",
+    "BmpValidator",
+    "WebPValidator",
+    "SvgValidator",
     # Archives
-    'ArchiveValidator',
-    'ZipValidator',
-    'TarValidator',
-    'TarGzValidator',
-    'TarBz2Validator',
-    'GzipValidator',
-    'Bzip2Validator',
-    
+    "ArchiveValidator",
+    "ZipValidator",
+    "TarValidator",
+    "TarGzValidator",
+    "TarBz2Validator",
+    "GzipValidator",
+    "Bzip2Validator",
     # PDF
-    'PdfValidator',
-    
+    "PdfValidator",
     # Office
-    'OfficeValidator',
-    'DocxValidator',
-    'XlsxValidator',
-    'PptxValidator',
-    'OdtValidator',
-    'OdsValidator',
-    'OdpValidator',
-    'DocValidator',
-    'XlsValidator',
-    'PptValidator',
-    
+    "OfficeValidator",
+    "DocxValidator",
+    "XlsxValidator",
+    "PptxValidator",
+    "OdtValidator",
+    "OdsValidator",
+    "OdpValidator",
+    "DocValidator",
+    "XlsValidator",
+    "PptValidator",
     # Video
-    'VideoValidator',
-    'Mp4Validator',
-    'AviValidator',
-    'MovValidator',
-    'MkvValidator',
-    'WebmValidator',
+    "VideoValidator",
+    "Mp4Validator",
+    "AviValidator",
+    "MovValidator",
+    "MkvValidator",
+    "WebmValidator",
     # Add other video validators to __all__ as needed
 ]

@@ -12,12 +12,14 @@ from .base import BaseGenerator
 
 class ImageConfig(TypedDict):
     """Type definition for image configuration."""
+
     src: str
     sizes: str
 
 
 class ImageSetConfig(TypedDict):
     """Type definition for the image set configuration."""
+
     icons: List[ImageConfig]
 
 
@@ -51,30 +53,27 @@ class ImageSetGenerator(BaseGenerator):
         output_dir.mkdir(parents=True, exist_ok=True)
 
         # Load and validate the configuration
-        with open(config_path, 'r', encoding='utf-8') as f:
+        with open(config_path, "r", encoding="utf-8") as f:
             config: ImageSetConfig = json.load(f)
 
         generated_files: List[Path] = []
 
-        for icon in config.get('icons', []):
+        for icon in config.get("icons", []):
             try:
                 # Parse dimensions (e.g., "100x200" -> (100, 200))
-                width, height = map(int, icon['sizes'].lower().split('x'))
-                output_path = output_dir / icon['src']
+                width, height = map(int, icon["sizes"].lower().split("x"))
+                output_path = output_dir / icon["src"]
                 output_path.parent.mkdir(parents=True, exist_ok=True)
 
                 # Create the image
                 if base_image and os.path.exists(base_image):
                     # Resize the base image
                     with Image.open(base_image) as img:
-                        img = img.resize(
-                            (width, height),
-                            Image.Resampling.LANCZOS
-                        )
+                        img = img.resize((width, height), Image.Resampling.LANCZOS)
                         img.save(output_path)
                 else:
                     # Create a simple placeholder image
-                    img = Image.new('RGB', (width, height), color=background_color)
+                    img = Image.new("RGB", (width, height), color=background_color)
                     if text:
                         draw = ImageDraw.Draw(img)
                         try:
@@ -84,23 +83,21 @@ class ImageSetGenerator(BaseGenerator):
                         except IOError:
                             # Fallback to default font
                             font = ImageFont.load_default()
-                        
+
                         # Calculate text position (centered)
-                        text_bbox = draw.textbbox(
-                            (0, 0), text, font=font
-                        )
+                        text_bbox = draw.textbbox((0, 0), text, font=font)
                         text_width = text_bbox[2] - text_bbox[0]
                         text_height = text_bbox[3] - text_bbox[1]
                         position = (
                             (width - text_width) // 2,
-                            (height - text_height) // 2
+                            (height - text_height) // 2,
                         )
-                        
+
                         draw.text(position, text, fill=text_color, font=font)
                     img.save(output_path)
 
                 generated_files.append(output_path)
-                
+
             except Exception as e:
                 print(f"Error generating {icon.get('src')}: {str(e)}")
                 continue

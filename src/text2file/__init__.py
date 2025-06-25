@@ -6,14 +6,14 @@ from importlib.metadata import PackageNotFoundError, version
 from .cli import cli
 from .generators import (
     FileValidator,
+    ImageFileValidator,
     PDFFileValidator,
     TextFileValidator,
     ValidationResult,
     cleanup_invalid_files,
     generate_file,
-    validate_file,
     get_validator,
-    ImageFileValidator,
+    validate_file,
 )
 
 try:

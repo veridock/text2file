@@ -8,14 +8,16 @@ from PIL import Image, ImageDraw, ImageFont
 from ..generators import register_generator
 
 
-def get_text_dimensions(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont) -> Tuple[int, int]:
+def get_text_dimensions(
+    draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont
+) -> Tuple[int, int]:
     """Calculate text dimensions using getbbox method.
-    
+
     Args:
         draw: ImageDraw instance
         text: Text to measure
         font: Font to use for measurement
-        
+
     Returns:
         tuple: (width, height) of the text bounding box
     """
@@ -45,7 +47,7 @@ def create_text_image(
     bg_color: str = "#f0f0f0",
     text_color: str = "#333333",
     font_size: int = 24,
-    padding: int = 40
+    padding: int = 40,
 ) -> Image.Image:
     """Create an image with the given text content.
 
@@ -116,17 +118,17 @@ def generate_image_file(content: str, output_path: Path) -> Path:
             bg_color="#f8f9fa",  # Light gray background
             text_color="#2c3e50",  # Dark blue-gray text
             font_size=36,
-            padding=40
+            padding=40,
         )
 
         # Save the image in the appropriate format
         image_format = output_path.suffix[1:].upper()
-        if image_format == 'JPG':
-            image_format = 'JPEG'
+        if image_format == "JPG":
+            image_format = "JPEG"
 
         # For PNG, use RGBA mode to support transparency
-        if image_format == 'PNG':
-            image = image.convert('RGBA')
+        if image_format == "PNG":
+            image = image.convert("RGBA")
 
         image.save(output_path, format=image_format, quality=95)
         return output_path

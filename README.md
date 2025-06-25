@@ -95,6 +95,10 @@ text2file [COMMAND] [OPTIONS]
 
 #### Generate a text file
 ```bash
+text2file "Hello, World!" txt
+```
+
+```bash
 text2file generate --content "Hello, World!" --extension txt
 ```
 
