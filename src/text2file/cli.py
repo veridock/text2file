@@ -2,13 +2,14 @@
 
 import json
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import click
 
 from .generators import (
     SUPPORTED_EXTENSIONS,
     ValidationResult,
+    ImageSetGenerator,
     cleanup_invalid_files,
     generate_file,
     validate_file,
@@ -32,15 +33,94 @@ def cli() -> None:
     pass
 
 
+@cli.command('generate-set')
+@click.argument("config_file", type=click.Path(exists=True, path_type=Path, dir_okay=False))
+@click.option(
+    "--output-dir",
+    "-o",
+    type=click.Path(path_type=Path, file_okay=False, dir_okay=True, allow_dash=False),
+    default=Path.cwd(),
+    help="Output directory for generated images",
+)
+@click.option(
+    "--base-image",
+    "-b",
+    type=click.Path(exists=True, path_type=Path, dir_okay=False),
+    default=None,
+    help="Base image to use for generation (optional)",
+)
+@click.option(
+    "--background-color",
+    "--bg",
+    default="#ffffff",
+    help="Background color for generated images (if no base image)",
+)
+@click.option(
+    "--text",
+    "-t",
+    default=None,
+    help="Text to render on the image (if no base image)",
+)
+@click.option(
+    "--text-color",
+    "--fg",
+    default="#000000",
+    help="Text color for generated images (if no base image)",
+)
+def generate_set(
+    config_file: Path,
+    output_dir: Path,
+    base_image: Optional[Path],
+    background_color: str,
+    text: Optional[str],
+    text_color: str,
+) -> None:
+    """Generate a set of images from a JSON configuration file.
+    
+    CONFIG_FILE should be a JSON file containing image configurations.
+    Example format:
+    {
+      "icons": [
+        {"src": "icon-16x16.png", "sizes": "16x16"},
+        {"src": "icon-32x32.png", "sizes": "32x32"}
+      ]
+    }
+    """
+    try:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Generate the images
+        generated_files = ImageSetGenerator.generate(
+            config_path=config_file,
+            output_dir=output_dir,
+            base_image=str(base_image) if base_image else None,
+            background_color=background_color,
+            text=text,
+            text_color=text_color,
+        )
+        
+        if generated_files:
+            click.echo("\nSuccessfully generated images:")
+            for filepath in generated_files:
+                click.echo(f"- {filepath}")
+        else:
+            click.echo(
+                "No images were generated. Check your configuration file.",
+                err=True,
+            )
+            
+    except Exception as e:
+        click.echo(f"Error generating image set: {str(e)}", err=True)
+        raise click.Abort() from e
+
+
 @cli.command()
 @click.argument("content")
 @click.argument("extensions", nargs=-1, required=True)
 @click.option(
     "--output-dir",
     "-o",
-    type=click.Path(
-        path_type=Path, file_okay=False, dir_okay=True, allow_dash=False
-    ),
+    type=click.Path(path_type=Path, file_okay=False, dir_okay=True, allow_dash=False),
     default=Path.cwd(),
     help="Output directory for generated files",
 )

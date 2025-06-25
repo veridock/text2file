@@ -3,13 +3,9 @@
 import importlib
 import os
 from pathlib import Path
-"""File generators and validators for different file formats."""
+from typing import Callable, Dict, List, Set
 
-import importlib
-import os
-from pathlib import Path
-from typing import Callable, Dict, List, Set, Type
-
+from .image_set import ImageSetGenerator
 from .validators import (
     FileValidator,
     TextFileValidator,
@@ -48,6 +44,7 @@ __all__ = [
     'validate_file',
     'GeneratorFunc',
     'SUPPORTED_EXTENSIONS',
+    'ImageSetGenerator',
 ]
 
 

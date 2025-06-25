@@ -85,6 +85,7 @@ text2file [COMMAND] [OPTIONS]
 ### Available Commands
 
 - `generate` - Generate files in various formats
+- `generate-set` - Generate a set of images from a JSON configuration
 - `validate` - Validate generated files
 - `cleanup` - Clean up invalid files
 - `--version` - Show version and exit
@@ -96,6 +97,40 @@ text2file [COMMAND] [OPTIONS]
 ```bash
 text2file generate --content "Hello, World!" --extension txt
 ```
+
+#### Generate a set of images from a JSON configuration
+
+Create a JSON file (e.g., `icons.json`) with the following format:
+
+```json
+{
+  "icons": [
+    {"src": "icon-16x16.png", "sizes": "16x16"},
+    {"src": "icon-32x32.png", "sizes": "32x32"},
+    {"src": "icon-64x64.png", "sizes": "64x64"}
+  ]
+}
+```
+
+Then run:
+
+```bash
+# Generate placeholder images with default text
+text2file generate-set icons.json
+
+# Use a base image and resize it
+text2file generate-set icons.json --base-image source-icon.png
+
+# Customize the placeholder appearance
+text2file generate-set icons.json --text "My App" --background-color "#f0f0f0" --text-color "#333333"
+```
+
+Options:
+- `-o, --output-dir`: Output directory (default: current directory)
+- `-b, --base-image`: Base image to use for resizing (optional)
+- `--bg, --background-color`: Background color for placeholders (default: "#ffffff")
+- `-t, --text`: Text to render on placeholder images
+- `--fg, --text-color`: Text color for placeholders (default: "#000000")
 
 #### Generate multiple files with different formats
 ```bash
@@ -161,16 +196,70 @@ content="Name,Age,City\nJohn,30,New York\nAlice,25,London"
 text2file generate --content "$content" --extension xlsx
 ```
 
-### Images
+### Image Sets
+
+Generate multiple images from a JSON configuration file. This is useful for creating icon sets or multiple resolutions of the same image.
+
+#### JSON Configuration Format
+
+Create a file (e.g., `icons.json`) with the following structure:
+
+```json
+{
+  "icons": [
+    {
+      "src": "icon-16x16.png",
+      "sizes": "16x16"
+    },
+    {
+      "src": "icon-32x32.png",
+      "sizes": "32x32"
+    },
+    {
+      "src": "subdir/icon-64x64.png",
+      "sizes": "64x64"
+    }
+  ]
+}
+```
+
+Each entry in the `icons` array should have:
+- `src`: Output file path (relative to output directory)
+- `sizes`: Dimensions in format "WIDTHxHEIGHT" (e.g., "32x32")
+
+#### Usage Examples
+
+```bash
+# Generate placeholder images with default text
+text2file generate-set icons.json
+
+# Use a base image and resize it
+text2file generate-set icons.json --base-image source-icon.png
+
+# Customize the placeholder appearance
+text2file generate-set icons.json --text "My App" --background-color "#f0f0f0" --text-color "#333333"
+
+# Specify output directory
+text2file generate-set icons.json --output-dir ./output
+```
+
+#### Options
+- `-o, --output-dir`: Output directory (default: current directory)
+- `-b, --base-image`: Base image to use for resizing (optional)
+- `--bg, --background-color`: Background color for placeholders (default: "#ffffff")
+- `-t, --text`: Text to render on placeholder images
+- `--fg, --text-color`: Text color for placeholders (default: "#000000")
+
+### Single Images
+
+#### JPEG (.jpg, .jpeg)
+```bash
+text2file generate --content "Sample image content" --extension jpg --width 800 --height 600
+```
 
 #### PNG (.png)
 ```bash
-text2file generate --content "Sample image with text" --extension png
-```
-
-#### JPEG (.jpg)
-```bash
-text2file generate --content "Sample JPEG image" --extension jpg
+text2file generate --content "Sample image content" --extension png --width 800 --height 600
 ```
 
 ### Archives
