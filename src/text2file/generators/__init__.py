@@ -115,14 +115,30 @@ try:
         generate_text_file
     )
 
-    # Import other generators
-    from .archives import *  # noqa: F401, F403
+    # Import and register archive generator
+    from .archives import generate_archive_file
+
+    register_generator(["zip", "tar", "tar.gz", "tgz"])(generate_archive_file)
+
+    # Import and register image generator
+    from .image import generate_image_file
+
+    register_generator(["svg"])(generate_image_file)
+
+    # Import and register PDF generator
+    from .pdf import generate_pdf
+
+    register_generator(["pdf"])(generate_pdf)
+    
+    # Import and register config generator
+    from .config import ConfigGenerator
+    
+    # Note: ConfigGenerator is registered directly in the config.py module: F401, F403
     from .image import *  # noqa: F401, F403
 
     # Lazy import of PDF generator to avoid circular imports
     from .image_set import ImageSetGenerator  # noqa: F401
     from .office import *  # noqa: F401, F403
-    from .pdf import *  # noqa: F401, F403
     from .video import *  # noqa: F401, F403
 
     # Add ImageSetGenerator to __all__

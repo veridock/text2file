@@ -2,7 +2,7 @@
 
 import imghdr
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from PIL import Image, UnidentifiedImageError
 
@@ -42,7 +42,9 @@ class ImageValidator(BaseValidator):
             if cls.FORMAT and path.suffix.lower()[1:] != cls.FORMAT.lower():
                 return ValidationResult(
                     is_valid=False,
-                    message=f"Expected {cls.FORMAT.upper()} file, got {path.suffix}",
+message=(
+                        f"Expected {cls.FORMAT.upper()} file, got {path.suffix}"
+                    ),
                 )
 
             # Check file magic number to verify the actual format
@@ -55,7 +57,10 @@ class ImageValidator(BaseValidator):
             if cls.FORMAT and detected_format.lower() != cls.FORMAT.lower():
                 return ValidationResult(
                     is_valid=False,
-                    message=f"File is not a {cls.FORMAT.upper()} image (detected as {detected_format.upper()})",
+message=(
+                        f"File is not a {cls.FORMAT.upper()} image "
+                        f"(detected as {detected_format.upper()})"
+                    ),
                 )
 
             # Try to open the image with PIL to validate its contents

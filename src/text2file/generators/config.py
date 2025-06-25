@@ -135,7 +135,12 @@ def _generate_ini(config: Dict[str, Any]) -> str:
 
 
 class ConfigGenerator(BaseGenerator):
-    """Generator for configuration files."""
+    """Generator for configuration files.
+    
+    This generator can convert between different configuration file formats including
+    JSON, YAML, TOML, and INI. It automatically detects the input format and can
+    convert to any of the supported output formats.
+    """
     
     @classmethod
     def generate(
@@ -156,24 +161,12 @@ class ConfigGenerator(BaseGenerator):
             Path to the generated file
             
         Raises:
-            ValueError: If the format is not supported
+            ValueError: If the format is not supported or content cannot be parsed
+            IOError: If there's an error writing the file
         """
-        format = kwargs.get('format', 'yaml').lower()
         output_path = Path(output_path)
-        """Generate a configuration file.
+        format = kwargs.get('format', 'yaml').lower()
         
-        Args:
-            content: Configuration content (JSON, YAML, or INI format)
-            output_path: Path to write the configuration file to
-            format: Output format (yaml, toml, ini, json)
-            **kwargs: Additional keyword arguments
-            
-        Returns:
-            Path to the generated file
-            
-        Raises:
-            ValueError: If the format is not supported
-        """
         # Parse the input content
         config = _parse_config_content(content)
         

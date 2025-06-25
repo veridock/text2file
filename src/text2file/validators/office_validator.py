@@ -14,13 +14,12 @@ class OfficeValidator(BaseValidator):
 
     # Common office document MIME types
     MIME_TYPES: Dict[str, List[str]] = {
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [
-            ".docx"
-        ],
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
-        "application/vnd.openxmlformats-officedocument.presentationml.presentation": [
-            ".pptx"
-        ],
+        "application/vnd.openxmlformats-officedocument"
+        ".wordprocessingml.document": [".docx"],
+        "application/vnd.openxmlformats-officedocument"
+        ".spreadsheetml.sheet": [".xlsx"],
+        "application/vnd.openxmlformats-officedocument"
+        ".presentationml.presentation": [".pptx"],
         "application/vnd.oasis.opendocument.text": [".odt"],
         "application/vnd.oasis.opendocument.spreadsheet": [".ods"],
         "application/vnd.oasis.opendocument.presentation": [".odp"],
@@ -105,12 +104,30 @@ class OfficeValidator(BaseValidator):
 
                 # Required files for OOXML/ODF
                 required_files = {
-                    ".docx": ["[Content_Types].xml", "word/document.xml"],
-                    ".xlsx": ["[Content_Types].xml", "xl/workbook.xml"],
-                    ".pptx": ["[Content_Types].xml", "ppt/presentation.xml"],
-                    ".odt": ["mimetype", "content.xml"],
-                    ".ods": ["mimetype", "content.xml"],
-                    ".odp": ["mimetype", "content.xml"],
+                    ".docx": [
+                        "[Content_Types].xml",
+                        "word/document.xml",
+                    ],
+                    ".xlsx": [
+                        "[Content_Types].xml",
+                        "xl/workbook.xml",
+                    ],
+                    ".pptx": [
+                        "[Content_Types].xml",
+                        "ppt/presentation.xml",
+                    ],
+                    ".odt": [
+                        "mimetype",
+                        "content.xml",
+                    ],
+                    ".ods": [
+                        "mimetype",
+                        "content.xml",
+                    ],
+                    ".odp": [
+                        "mimetype",
+                        "content.xml",
+                    ],
                 }
 
                 ext = file_path.suffix.lower()
@@ -187,10 +204,39 @@ class OfficeValidator(BaseValidator):
                 ],
             )
 
+    def _check_legacy_office(
+        self, file_path: Path
+    ) -> ValidationResult:
+        """Check if the file is a valid legacy office document."""
+        try:
+            # Legacy office files have a specific header
+            with open(file_path, 'rb') as f:
+                header = f.read(8)
+                if header.startswith(b'\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1'):
+                    return ValidationResult(
+                        is_valid=True,
+                        message=(
+                            f"Valid legacy office document: "
+                            f"{file_path.suffix}"
+                        )
+                    )
+                return ValidationResult(
+                    is_valid=False,
+                    message="Not a valid legacy office document"
+                )
+
+        except Exception as e:
+            return ValidationResult(
+                is_valid=False,
+                message=(
+                    f"Error validating legacy office document {file_path}: {str(e)}"
+                )
+            )
+
 
 class DocxValidator(OfficeValidator):
     """Validator for DOCX files."""
-
+    
     MIME_TYPES = {
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [
             ".docx"
@@ -201,20 +247,21 @@ class DocxValidator(OfficeValidator):
 
 class XlsxValidator(OfficeValidator):
     """Validator for XLSX files."""
-
+    
     MIME_TYPES = {
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
+            ".xlsx"
+        ],
     }
     EXTENSIONS = [".xlsx"]
 
 
 class PptxValidator(OfficeValidator):
     """Validator for PPTX files."""
-
+    
     MIME_TYPES = {
-        "application/vnd.openxmlformats-officedocument.presentationml.presentation": [
-            ".pptx"
-        ],
+        "application/vnd.openxmlformats-officedocument"
+        ".presentationml.presentation": [".pptx"],
     }
     EXTENSIONS = [".pptx"]
 

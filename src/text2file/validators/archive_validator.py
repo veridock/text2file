@@ -7,7 +7,6 @@ import zipfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from ..generators.base import BaseGenerator
 from .base import BaseValidator, ValidationResult
 
 
@@ -41,10 +40,12 @@ class ArchiveValidator(BaseValidator):
                 )
 
             # Check file extension matches expected format
-            if cls.FORMAT and not self._matches_format(path, cls.FORMAT):
+            if cls.FORMAT and not cls._matches_format(path, cls.FORMAT):
                 return ValidationResult(
                     is_valid=False,
-                    message=f"Expected {cls.FORMAT.upper()} file, got {path.suffix}",
+                    message=(
+                        f"Expected {cls.FORMAT.upper()} file, got {path.suffix}"
+                    ),
                 )
 
             # Delegate to format-specific validation
@@ -58,13 +59,19 @@ class ArchiveValidator(BaseValidator):
             )
 
     @classmethod
-    def _matches_format(cls, path: Path, expected_format: str) -> bool:
-        """Check if the file's extension matches the expected format."""
-        suffixes = [s.lower().lstrip(".") for s in path.suffixes]
-        return (
-            expected_format.lower() in suffixes
-            or f".{expected_format}" in path.suffix.lower()
-        )
+    def _matches_format(cls, path: Path, format_str: str) -> bool:
+        """Check if the file extension matches the expected format."""
+        if format_str == "tar.gz":
+            return (
+                path.suffixes == [".tar", ".gz"] or 
+                path.suffix == ".tgz"
+            )
+        if format_str == "tar.bz2":
+            return (
+                path.suffixes == [".tar", ".bz2"] or 
+                path.suffix == ".tbz2"
+            )
+        return path.suffix.lower() == f".{format_str}"
 
     @classmethod
     def _validate_archive(cls, file_path: str) -> ValidationResult:
@@ -118,20 +125,25 @@ class ZipValidator(ArchiveValidator):
 
     @classmethod
     def _get_archive_contents(cls, file_path: str) -> List[Dict[str, Any]]:
-        """Get a list of files in the ZIP archive with their details."""
-        contents = []
-        with zipfile.ZipFile(file_path, "r") as zip_ref:
-            for info in zip_ref.infolist():
-                contents.append(
-                    {
-                        "filename": info.filename,
-                        "size": info.file_size,
-                        "compressed_size": info.compress_size,
-                        "modified": f"{info.date_time[0]}-{info.date_time[1]:02d}-{info.date_time[2]:02d} {info.date_time[3]:02d}:{info.date_time[4]:02d}",
-                        "is_dir": info.filename.endswith("/"),
-                    }
-                )
-        return contents
+        """Get a list of files in the ZIP archive with their details.
+        
+        Args:
+            file_path: Path to the archive file
+            
+        Returns:
+            List of dictionaries containing file information
+        """
+        with zipfile.ZipFile(file_path, 'r') as zip_ref:
+            return [
+                {
+                    'filename': info.filename,
+                    'file_size': info.file_size,
+                    'compress_size': info.compress_size,
+                    'is_dir': info.is_dir(),
+                    'modified': info.date_time,
+                }
+                for info in zip_ref.infolist()
+            ]
 
 
 class TarValidator(ArchiveValidator):
