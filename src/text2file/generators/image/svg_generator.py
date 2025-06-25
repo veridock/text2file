@@ -3,8 +3,8 @@
 from pathlib import Path
 from typing import Any
 
-from ...utils.file_utils import ensure_directory
 from ...generators.registration import register_generator_directly
+from ...utils.file_utils import ensure_directory
 
 
 def _create_svg_content(content: str, width: int = 200, height: int = 100) -> str:
@@ -18,7 +18,7 @@ def _create_svg_content(content: str, width: int = 200, height: int = 100) -> st
     Returns:
         str: SVG content as a string
     """
-    return f'''<?xml version="1.0" encoding="UTF-8"?>
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
 <svg width="{width}" height="{height}" version="1.1"
      viewBox="0 0 {width} {height}" 
      xmlns="http://www.w3.org/2000/svg">
@@ -31,15 +31,11 @@ def _create_svg_content(content: str, width: int = 200, height: int = 100) -> st
         fill="black">
     {content}
   </text>
-</svg>'''
+</svg>"""
 
 
 def generate_svg(
-    content: str,
-    output_path: Path,
-    width: int = 200,
-    height: int = 100,
-    **kwargs: Any
+    content: str, output_path: Path, width: int = 200, height: int = 100, **kwargs: Any
 ) -> Path:
     """Generate an SVG file with the given content.
 
@@ -59,12 +55,12 @@ def generate_svg(
     if output_path.parent:
         ensure_directory(output_path.parent)
 
-
     # Write the SVG content to file
     with output_path.open("w", encoding="utf-8") as f:
         f.write(svg_content)
-    
+
     return output_path
+
 
 # Register the SVG generator
 register_generator_directly(["svg"], generate_svg)

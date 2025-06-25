@@ -5,12 +5,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from .registration import (
-    GeneratorFunc,
-    get_generator as _get_generator,
-    get_supported_extensions,
-    register_generator,
-)
+from .registration import GeneratorFunc
+from .registration import get_generator as _get_generator
+from .registration import get_supported_extensions, register_generator
 from .validators import (
     FileValidator,
     ImageFileValidator,
@@ -18,9 +15,9 @@ from .validators import (
     TextFileValidator,
     ValidationResult,
     cleanup_invalid_files,
-    get_validator as _get_validator,
-    validate_file,
 )
+from .validators import get_validator as _get_validator
+from .validators import validate_file
 
 # Re-export registration functions
 register_generator = register_generator
@@ -29,6 +26,7 @@ get_generator = _get_generator
 # Make SUPPORTED_EXTENSIONS a function call to get the latest set of extensions
 def SUPPORTED_EXTENSIONS():
     return get_supported_extensions()
+
 
 # Re-export get_validator from validators module
 get_validator = _get_validator
@@ -109,23 +107,23 @@ try:
     # Force reload of supported extensions after all generators are registered
     def get_supported_extensions_with_reload():
         return get_supported_extensions()
-    
+
     # Import text generator first
     from .text import generate_text_file
-    
+
     register_generator(["txt", "md", "html", "css", "js", "py", "json", "csv"])(
         generate_text_file
     )
 
     # Import other generators
     from .archives import *  # noqa: F401, F403
+    from .image import *  # noqa: F401, F403
+
+    # Lazy import of PDF generator to avoid circular imports
+    from .image_set import ImageSetGenerator  # noqa: F401
     from .office import *  # noqa: F401, F403
     from .pdf import *  # noqa: F401, F403
     from .video import *  # noqa: F401, F403
-    from .image import *  # noqa: F401, F403
-    
-    # Lazy import of PDF generator to avoid circular imports
-    from .image_set import ImageSetGenerator  # noqa: F401
 
     # Add ImageSetGenerator to __all__
     __all__.append("ImageSetGenerator")

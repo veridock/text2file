@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 # Check if Pillow is available
 try:
     from PIL import Image, ImageDraw, ImageFont  # noqa: F401
+
     PILLOW_AVAILABLE = True
 except ImportError:
     PILLOW_AVAILABLE = False
@@ -19,6 +20,7 @@ except ImportError:
 # Check if NumPy is available
 try:
     import numpy as np  # type: ignore
+
     NUMPY_AVAILABLE = True
 except ImportError:
     NUMPY_AVAILABLE = False
@@ -27,6 +29,7 @@ except ImportError:
 # Check if moviepy is available
 try:
     from moviepy.editor import CompositeVideoClip, ImageClip, TextClip  # type: ignore
+
     MOVIEPY_AVAILABLE = True
 except ImportError:
     MOVIEPY_AVAILABLE = False
@@ -100,13 +103,13 @@ def _generate_video_with_ffmpeg(
         # Create a temporary directory for frames
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_dir_path = Path(temp_dir)
-            
+
             # Create frames using Pillow
             for i in range(duration * fps):
                 frame = _create_video_frame(text)
                 frame_path = temp_dir_path / f"frame_{i:04d}.png"
                 frame.save(frame_path, "PNG")
-            
+
             # Use ffmpeg to create the video
             cmd = [
                 "ffmpeg",
@@ -121,13 +124,12 @@ def _generate_video_with_ffmpeg(
                 "yuv420p",
                 str(output_path),
             ]
-            
+
             subprocess.run(cmd, check=True, capture_output=True)
             return True
-            
+
     except (subprocess.CalledProcessError, OSError) as e:
-        print(f"Error generating video with ffmpeg: {e}", 
-              file=sys.stderr)
+        print(f"Error generating video with ffmpeg: {e}", file=sys.stderr)
         return False
 
 
@@ -151,7 +153,7 @@ def _generate_video_with_moviepy(
             ImageClip,
             TextClip,
         )
-        
+
         # Create a text clip
         txt_clip = TextClip(
             text,
@@ -159,15 +161,15 @@ def _generate_video_with_moviepy(
             color="white",
             size=(1280, 720),
         ).set_duration(duration)
-        
+
         # Create a color clip for the background
         color_clip = ImageClip(
             _create_video_frame(text).convert("RGB")  # type: ignore
         ).set_duration(duration)
-        
+
         # Overlay the text clip on the color clip
         video = CompositeVideoClip([color_clip, txt_clip])  # type: ignore
-        
+
         # Write the video file
         video.write_videofile(
             str(output_path),
@@ -176,7 +178,7 @@ def _generate_video_with_moviepy(
             audio=False,
         )
         return True
-        
+
     except ImportError as e:
         print(f"MoviePy not available: {e}", file=sys.stderr)
         return False
@@ -211,23 +213,22 @@ def generate_video_file(
             "Pillow is required for video generation. "
             "Install with: pip install pillow"
         )
-        
+
     if not NUMPY_AVAILABLE:
         raise ImportError(
-            "NumPy is required for video generation. "
-            "Install with: pip install numpy"
+            "NumPy is required for video generation. " "Install with: pip install numpy"
         )
-    
+
     # Ensure output directory exists
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     # Try moviepy first
     try:
         if _generate_video_with_moviepy(content, output_path, duration, fps):
             return output_path
     except ImportError as e:
         print(f"Note: {e}", file=sys.stderr)
-    
+
     # Fall back to ffmpeg if moviepy fails or is not available
     try:
         if _generate_video_with_ffmpeg(content, output_path, duration, fps):
@@ -259,5 +260,5 @@ else:
         None,
         requires=["Pillow", "numpy"],
         description="Generate video files with text content "
-                   "(requires Pillow and numpy)",
+        "(requires Pillow and numpy)",
     )

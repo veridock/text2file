@@ -5,13 +5,16 @@ from typing import Any, Optional, Tuple, Type
 
 from ...generators.registration import register_generator_directly
 
+
 def _get_fpdf() -> Tuple[Optional[Type], Optional[Type], Optional[Type]]:
     """Lazy import of fpdf2 to make it an optional dependency."""
     try:
         from fpdf import FPDF, XPos, YPos
+
         return FPDF, XPos, YPos
     except ImportError:
         return None, None, None
+
 
 def generate_pdf_file(content: str, output_path: Path, **kwargs: Any) -> Path:
     """Generate a PDF file with the given content.
@@ -70,10 +73,10 @@ def generate_pdf_file(content: str, output_path: Path, **kwargs: Any) -> Path:
         # Add space after paragraph
         pdf.ln(5)
 
-
     # Save the PDF
     pdf.output(str(output_path))
     return output_path
+
 
 # Register the PDF generator
 register_generator_directly(["pdf"], generate_pdf_file)

@@ -3,13 +3,14 @@
 import io
 import sys
 from pathlib import Path
-from typing import Optional, Any, Callable, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 # Type variable for generator functions
-GeneratorFunc = TypeVar('GeneratorFunc', bound=Callable[..., Optional[Path]])
+GeneratorFunc = TypeVar("GeneratorFunc", bound=Callable[..., Optional[Path]])
 
 # This will be set when the module is imported in generators/__init__.py
 register_generator = None  # type: ignore
+
 
 def _register_generators():
     """Register all office document generators."""
@@ -19,13 +20,16 @@ def _register_generators():
         register_generator(["xlsx"])(generate_xlsx_file)
         register_generator(["odt"])(generate_odt_file)
 
+
 # This will be called after all imports are complete
 def _on_import():
     if register_generator is not None:
         _register_generators()
 
+
 # Register the callback to run after imports are complete
 import atexit
+
 atexit.register(_on_import)
 
 

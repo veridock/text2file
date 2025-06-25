@@ -16,7 +16,6 @@ from ...utils.image_utils import (
 )
 from ...validators.base import ValidationResult  # noqa: F401 - Type hints
 
-
 # Default font sizes for different content lengths
 FONT_SIZES = {
     "small": (100, 36),  # For 1-50 chars
@@ -28,6 +27,7 @@ FONT_SIZES = {
 DEFAULT_BG_COLOR = "#f0f0f0"
 DEFAULT_TEXT_COLOR = "#333333"
 DEFAULT_PADDING = 40
+
 
 def generate_jpg(
     content: str,
@@ -175,8 +175,7 @@ def generate_jpg(
                 else:
                     lines.append(line)
 
-
-            # Calculate total height and max width
+                # Calculate total height and max width
                 total_height = 0
                 max_line_width = 0
                 line_heights = []
@@ -202,11 +201,11 @@ def generate_jpg(
 
         # Get text dimensions
         text_width, text_height = get_text_dimensions(content, font, max_width)
-        
+
         # Initialize width and height if not already set
-        if 'width' not in locals():
+        if "width" not in locals():
             width = 800  # Default width if not set
-        if 'height' not in locals():
+        if "height" not in locals():
             height = 600  # Default height if not set
 
         # Adjust image size if auto_resize is True and text doesn't fit
@@ -269,9 +268,7 @@ class JpgGenerator(FileGenerator):
     """Generator for JPG image files."""
 
     @classmethod
-    def generate(
-        cls, content: str, output_path: Path, **kwargs: Any
-    ) -> Path:
+    def generate(cls, content: str, output_path: Path, **kwargs: Any) -> Path:
         """Generate a JPG file with the given content.
 
         Args:
@@ -285,7 +282,7 @@ class JpgGenerator(FileGenerator):
         return generate_jpg(content, output_path, **kwargs)
 
     @classmethod
-    def validate(cls, file_path: Union[str, Path]) -> 'ValidationResult':
+    def validate(cls, file_path: Union[str, Path]) -> "ValidationResult":
         """Validate that the file is a valid JPEG image.
 
         Args:
@@ -295,6 +292,7 @@ class JpgGenerator(FileGenerator):
             ValidationResult indicating whether the file is a valid JPEG
         """
         from ...validators.image_validator import JpegValidator
+
         return JpegValidator.validate(file_path)
 
 

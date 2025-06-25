@@ -40,10 +40,10 @@ class ShellScriptValidator(BaseValidator):
             Tuple of (interpreter, path) if shebang found,
             (None, None) otherwise
         """
-        if not content.startswith('#!'):
+        if not content.startswith("#!"):
             return None, None
 
-        shebang_line = content.split('\n', 1)[0].strip()
+        shebang_line = content.split("\n", 1)[0].strip()
         parts = shebang_line[2:].strip().split()
 
         if not parts:
@@ -63,15 +63,15 @@ class ShellScriptValidator(BaseValidator):
         Returns:
             Tuple of (is_valid, message)
         """
-        if not shutil.which('shellcheck'):
+        if not shutil.which("shellcheck"):
             return False, "shellcheck is not installed"
 
         try:
             result = subprocess.run(
-                ['shellcheck', str(filepath)],
+                ["shellcheck", str(filepath)],
                 capture_output=True,
                 text=True,
-                check=False
+                check=False,
             )
 
             if result.returncode == 0:
@@ -163,9 +163,8 @@ class ShellScriptValidator(BaseValidator):
                 message=f"Shell script validation failed ({message})",
                 details=details,
             )
-        
-        details["info"] = "shellcheck is not installed, " \
-                       "skipping advanced validation"
+
+        details["info"] = "shellcheck is not installed, " "skipping advanced validation"
 
         return ValidationResult(
             is_valid=True,

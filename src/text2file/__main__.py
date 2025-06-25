@@ -11,13 +11,13 @@ def convert_short_syntax(args: List[str]) -> List[str]:
     To: text2file generate --content "content" --extension ext1 [ext2...]
     """
     if len(args) >= 2 and not any(
-        arg.startswith('--') or arg == 'generate' for arg in args
+        arg.startswith("--") or arg == "generate" for arg in args
     ):
         # This looks like the short syntax: text2file "content" ext1 [ext2...]
         content = args[0]
         extensions = args[1:]
-        return ['generate', '--content', content] + [
-            arg for ext in extensions for arg in ('--extension', ext)
+        return ["generate", "--content", content] + [
+            arg for ext in extensions for arg in ("--extension", ext)
         ]
     return args
 
@@ -29,8 +29,8 @@ def main() -> None:
     # Convert short syntax to long syntax if needed
     if (
         len(sys.argv) > 1
-        and sys.argv[1] != '--help'
-        and not sys.argv[1].startswith('-')
+        and sys.argv[1] != "--help"
+        and not sys.argv[1].startswith("-")
     ):
         sys.argv[1:] = convert_short_syntax(sys.argv[1:])
 

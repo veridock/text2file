@@ -27,24 +27,35 @@ class TestText2File(TestCase):
         """Test that we have generators for all supported extensions."""
         # Get the current set of supported extensions
         supported = SUPPORTED_EXTENSIONS()
-        
+
         # Check that we have at least some supported extensions
         self.assertGreater(len(supported), 0)
-        
+
         # Debug output
         print("\nSupported extensions:", sorted(supported))
-        
+
         # Check that common formats are supported
-        common_formats = ["txt", "md", "py", "sh", "html", "css", "js", "json", "csv", "zip", "tar", "pdf"]
+        common_formats = [
+            "txt",
+            "md",
+            "py",
+            "sh",
+            "html",
+            "css",
+            "js",
+            "json",
+            "csv",
+            "zip",
+            "tar",
+            "pdf",
+        ]
         for ext in common_formats:
             if ext not in supported:
                 print(f"Warning: Common format '{ext}' is not in supported extensions")
 
     def test_generate_text_file(self):
         """Test generating a text file."""
-        output_path = generate_file(
-            self.test_content, "txt", self.test_dir, "test"
-        )
+        output_path = generate_file(self.test_content, "txt", self.test_dir, "test")
         self.assertTrue(output_path.exists())
         self.assertEqual(output_path.suffix, ".txt")
         self.assertEqual(
@@ -54,9 +65,7 @@ class TestText2File(TestCase):
     def test_generate_markdown_file(self):
         """Test generating a markdown file."""
         markdown_content = "# Test\n\nThis is a **test** markdown file."
-        output_path = generate_file(
-            markdown_content, "md", self.test_dir, "test"
-        )
+        output_path = generate_file(markdown_content, "md", self.test_dir, "test")
         self.assertTrue(output_path.exists())
         self.assertIn(output_path.suffix, [".md", ".markdown"])
         self.assertEqual(
@@ -69,18 +78,16 @@ class TestText2File(TestCase):
         supported = SUPPORTED_EXTENSIONS()
         if "pdf" not in supported:
             self.skipTest("PDF generation not supported in this installation")
-        
+
         # Check if we can import fpdf2
         try:
             import fpdf
             from fpdf import FPDF, XPos, YPos
         except ImportError:
             self.skipTest("fpdf2 is required for PDF generation")
-            
+
         try:
-            output_path = generate_file(
-                self.test_content, "pdf", self.test_dir, "test"
-            )
+            output_path = generate_file(self.test_content, "pdf", self.test_dir, "test")
             self.assertTrue(output_path.exists())
             self.assertEqual(output_path.suffix, ".pdf")
             self.assertGreater(output_path.stat().st_size, 0)
@@ -95,7 +102,7 @@ class TestText2File(TestCase):
         supported = SUPPORTED_EXTENSIONS()
         if not any(ext in supported for ext in ["jpg", "jpeg", "png", "gif", "svg"]):
             self.skipTest("No image formats supported in this installation")
-            
+
         # Test each supported image format
         for ext in ["jpg", "jpeg", "png", "gif", "svg"]:
             if ext in supported:
@@ -111,11 +118,11 @@ class TestText2File(TestCase):
         """Test generating office files."""
         supported = SUPPORTED_EXTENSIONS()
         office_formats = ["docx", "xlsx", "odt", "ods"]
-        
+
         # Skip if no office formats are supported
         if not any(ext in supported for ext in office_formats):
             self.skipTest("No office formats supported in this installation")
-            
+
         for ext in office_formats:
             if ext in supported:
                 with self.subTest(ext=ext):
@@ -133,11 +140,11 @@ class TestText2File(TestCase):
         """Test generating archive files."""
         supported = SUPPORTED_EXTENSIONS()
         archive_formats = ["zip", "tar", "tar.gz", "tgz"]
-        
+
         # Skip if no archive formats are supported
         if not any(ext in supported for ext in archive_formats):
             self.skipTest("No archive formats supported in this installation")
-            
+
         # Test with supported archive formats
         for ext in archive_formats:
             if ext not in supported:
