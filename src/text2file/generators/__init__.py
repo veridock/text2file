@@ -115,10 +115,13 @@ try:
         generate_text_file
     )
 
-    # Import and register archive generator
-    from .archives import generate_archive_file
+    # Import and register archive generators
+    from .archives import generate_zip_file, generate_tar_file
 
-    register_generator(["zip", "tar", "tar.gz", "tgz"])(generate_archive_file)
+    # Register each archive type with its specific generator
+    register_generator(["zip"])(generate_zip_file)
+    register_generator(["tar"])(generate_tar_file)
+    register_generator(["tar.gz", "tgz"])(generate_tar_file)
 
     # Import and register image generator
     from .image import generate_image_file
