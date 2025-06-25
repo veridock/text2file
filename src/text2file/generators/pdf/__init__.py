@@ -1,28 +1,28 @@
-"""Generator for PDF files."""
+"""PDF file generators."""
 
+# Use lazy imports to avoid circular imports
+import sys
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional, Tuple, Type, TypeVar
 
-from ..generators import register_generator
+# This will be set when the module is imported in generators/__init__.py
+register_generator = None
 
-
-def _get_fpdf():
+def _get_fpdf() -> Tuple[Optional[Type], Optional[Type], Optional[Type]]:
     """Lazy import of fpdf2 to make it an optional dependency."""
     try:
         from fpdf import FPDF, XPos, YPos
-
         return FPDF, XPos, YPos
     except ImportError:
         return None, None, None
 
-
-@register_generator(["pdf"])
-def generate_pdf_file(content: str, output_path: Path) -> Path:
+def generate_pdf_file(content: str, output_path: Path, **kwargs: Any) -> Path:
     """Generate a PDF file with the given content.
 
     Args:
         content: Text content to include in the PDF
         output_path: Path where the PDF should be saved
+        **kwargs: Additional keyword arguments (ignored)
 
     Returns:
         Path to the generated PDF file
@@ -31,7 +31,7 @@ def generate_pdf_file(content: str, output_path: Path) -> Path:
         ImportError: If fpdf2 is not installed
     """
     FPDF, XPos, YPos = _get_fpdf()
-    if FPDF is None:
+    if FPDF is None or XPos is None or YPos is None:
         raise ImportError(
             "fpdf2 is required for PDF generation. Install with: pip install fpdf2"
         )
@@ -73,6 +73,21 @@ def generate_pdf_file(content: str, output_path: Path) -> Path:
         # Add space after paragraph
         pdf.ln(5)
 
+
     # Save the PDF
     pdf.output(str(output_path))
     return output_path
+
+def _register_generators():
+    """Register all PDF generators."""
+    if register_generator is not None:
+        register_generator(["pdf"])(generate_pdf_file)
+
+# This will be called after all imports are complete
+def _on_import():
+    if register_generator is not None:
+        _register_generators()
+
+# Register the callback to run after imports are complete
+import atexit
+atexit.register(_on_import)

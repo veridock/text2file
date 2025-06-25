@@ -1,10 +1,32 @@
 """Generators for office document formats."""
 
 import io
+import sys
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Any, Callable, TypeVar
 
-from ..generators import register_generator
+# Type variable for generator functions
+GeneratorFunc = TypeVar('GeneratorFunc', bound=Callable[..., Optional[Path]])
+
+# This will be set when the module is imported in generators/__init__.py
+register_generator = None  # type: ignore
+
+def _register_generators():
+    """Register all office document generators."""
+    # Register the office document generators
+    if register_generator is not None:
+        register_generator(["docx"])(generate_docx_file)
+        register_generator(["xlsx"])(generate_xlsx_file)
+        register_generator(["odt"])(generate_odt_file)
+
+# This will be called after all imports are complete
+def _on_import():
+    if register_generator is not None:
+        _register_generators()
+
+# Register the callback to run after imports are complete
+import atexit
+atexit.register(_on_import)
 
 
 def _get_docx():
@@ -27,7 +49,6 @@ def _get_openpyxl():
         return None
 
 
-@register_generator(["docx"])
 def generate_docx_file(content: str, output_path: Path) -> Optional[Path]:
     """Generate a DOCX file with the given content.
 
@@ -50,7 +71,6 @@ def generate_docx_file(content: str, output_path: Path) -> Optional[Path]:
     return output_path
 
 
-@register_generator(["xlsx"])
 def generate_xlsx_file(content: str, output_path: Path) -> Optional[Path]:
     """Generate an XLSX file with the given content.
 
@@ -81,7 +101,6 @@ def generate_xlsx_file(content: str, output_path: Path) -> Optional[Path]:
     return output_path
 
 
-@register_generator(["odt"])
 def generate_odt_file(content: str, output_path: Path) -> Optional[Path]:
     """Generate an ODT file with the given content.
 

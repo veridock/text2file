@@ -1,11 +1,9 @@
 """File generators and validators for different file formats."""
 
-import importlib
-import os
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, TypeVar, cast
+from typing import Optional
 
 from .registration import (
     GeneratorFunc,
@@ -50,10 +48,14 @@ __all__ = [
 ]  # ImageSetGenerator will be added after import
 
 
+# Module-level constant for default output directory
+_DEFAULT_OUTPUT_DIR = Path.cwd()
+
+
 def generate_file(
     content: str,
     extension: str,
-    output_dir: Path = Path.cwd(),
+    output_dir: Optional[Path] = None,
     prefix: str = "generated",
 ) -> Path:
     """Generate a file with the given content and extension.
@@ -76,8 +78,12 @@ def generate_file(
     if generator is None:
         raise ValueError(f"No generator found for extension: {extension}")
 
-    # Create output directory if it doesn't exist
-    output_dir.mkdir(parents=True, exist_ok=True)
+    # Use default output directory if none provided
+    if output_dir is None:
+        output_dir = _DEFAULT_OUTPUT_DIR
+    else:
+        # Create output directory if it doesn't exist
+        output_dir.mkdir(parents=True, exist_ok=True)
 
     # Generate a unique filename
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -92,31 +98,36 @@ def generate_file(
         # Clean up partially created files
         if output_path.exists():
             output_path.unlink()
-        raise IOError(f"Error generating {extension} file: {str(e)}")
+        raise IOError(f"Error generating {extension} file: {str(e)}") from e
 
 
 # Import and register all generators
 try:
     # Import text generator first
     from .text import generate_text_file
+    
     register_generator(["txt", "md", "html", "css", "js", "py", "json", "csv"])(
         generate_text_file
     )
-    
+
     # Import other generators
     from .archives import *  # noqa: F401, F403
-    from .image import *  # noqa: F401, F403
-    from .image_set import *  # noqa: F401, F403
     from .office import *  # noqa: F401, F403
-    from .pdf import *  # noqa: F401, F403
     from .video import *  # noqa: F401, F403
+    from .image import *  # noqa: F401, F403
     
-    # Import ImageSetGenerator after all other generators
-    from .image_set import ImageSetGenerator
-    
+    # Lazy import of PDF generator to avoid circular imports
+    from .pdf import generate_pdf_file  # noqa: F401
+    register_generator(["pdf"])(generate_pdf_file)
+    from .image_set import ImageSetGenerator  # noqa: F401
+
     # Add ImageSetGenerator to __all__
     __all__.append("ImageSetGenerator")
     
+    # Process any pending registrations
+    from .registration import process_pending_registrations
+    process_pending_registrations()
+
 except ImportError as e:
-    print(f"Error importing generators: {e}", file=sys.stderr)
+    print(f"Error importing generators: {e}", file=sys.stderr)  # noqa: T201
     raise

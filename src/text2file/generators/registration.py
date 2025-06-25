@@ -2,7 +2,7 @@
 
 import sys
 from pathlib import Path
-from typing import Callable, Dict, List, Set, TypeVar, cast
+from typing import Callable, Dict, List, Set, TypeVar, cast, Any, Optional
 
 # Type variable for generator functions
 GeneratorFunc = TypeVar('GeneratorFunc', bound=Callable[..., Path])
@@ -13,31 +13,41 @@ _generators: Dict[str, GeneratorFunc] = {}
 # Set of supported file extensions (without leading dot)
 SUPPORTED_EXTENSIONS: Set[str] = set()
 
-
-def register_generator(
-    extensions: List[str],
-) -> Callable[[GeneratorFunc], GeneratorFunc]:
+def register_generator(extensions: List[str]) -> Callable[[GeneratorFunc], GeneratorFunc]:
     """Decorator to register a generator function for specific file extensions.
-
+    
+    This decorator can be used at module level to register a generator function.
+    
     Args:
         extensions: List of file extensions (with or without leading dot) that this generator supports
-
+        
     Returns:
-        Decorator function that registers the generator
+        A decorator function that registers the generator
     """
     def decorator(func: GeneratorFunc) -> GeneratorFunc:
         """Register the generator function for the given extensions."""
-        print(
-            f"Registering generator {func.__name__} for extensions: {extensions}",
-            file=sys.stderr,
-        )
         for ext in extensions:
-            # Remove leading dot if present
             ext = ext.lstrip('.').lower()
             _generators[ext] = func
             SUPPORTED_EXTENSIONS.add(ext)
+            print(f"Registered generator for .{ext}", file=sys.stderr)
         return func
     return decorator
+
+def register_generator_directly(extensions: List[str], func: GeneratorFunc) -> None:
+    """Directly register a generator function for specific file extensions.
+    
+    This function can be used to register a generator function without using the decorator syntax.
+    
+    Args:
+        extensions: List of file extensions (with or without leading dot)
+        func: The generator function to register
+    """
+    for ext in extensions:
+        ext = ext.lstrip('.').lower()
+        _generators[ext] = func
+        SUPPORTED_EXTENSIONS.add(ext)
+        print(f"Registered generator for .{ext}", file=sys.stderr)
 
 
 def get_generator(extension: str) -> Callable[..., Path]:
