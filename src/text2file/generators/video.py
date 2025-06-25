@@ -1,20 +1,29 @@
-"""Generators for video file formats.
+"""Video file generation functionality.
 
-This module provides functionality to generate video files with text content.
+This module provides functions to generate video files with text content.
+It supports multiple video formats and can use either ffmpeg or moviepy as the backend.
+"""
+
+"""Video file generation functionality.
+
+This module provides functions to generate video files with text content.
+It supports multiple video formats and can use either ffmpeg or moviepy as the backend.
 """
 
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union, cast, Any
 
-# Check if Pillow is available
+# Third-party imports (make optional with try/except)
 try:
-    from PIL import Image, ImageDraw, ImageFont
+    from PIL import Image, ImageDraw, ImageFont  # type: ignore
+    from PIL.ImageFont import FreeTypeFont  # type: ignore
     PILLOW_AVAILABLE = True
 except ImportError:
     PILLOW_AVAILABLE = False
+    FreeTypeFont = Image = ImageDraw = ImageFont = None  # type: ignore
 
 # Check if NumPy is available
 try:
@@ -26,11 +35,28 @@ except ImportError:
 
 # Check if moviepy is available
 try:
-    from moviepy.editor import CompositeVideoClip, ImageClip, TextClip  # type: ignore # noqa: F401
+    from moviepy.editor import CompositeVideoClip, ImageClip, TextClip  # type: ignore
     MOVIEPY_AVAILABLE = True
 except ImportError:
     MOVIEPY_AVAILABLE = False
-    CompositeVideoClip = ImageClip = TextClip = None
+    CompositeVideoClip = ImageClip = TextClip = None  # type: ignore
+    
+# Check if NumPy is available
+try:
+    import numpy as np  # type: ignore
+    NUMPY_AVAILABLE = True
+except ImportError:
+    NUMPY_AVAILABLE = False
+    np = None  # type: ignore
+
+# Check if registration is available
+try:
+    from ..registration import register_generator  # type: ignore
+    REGISTRATION_AVAILABLE = True
+except ImportError:
+    REGISTRATION_AVAILABLE = False
+    register_generator = None  # type: ignore
+    CompositeVideoClip = ImageClip = TextClip = None  # type: ignore
 
 # Conditional import to avoid circular imports
 if TYPE_CHECKING or (PILLOW_AVAILABLE and NUMPY_AVAILABLE):
@@ -39,47 +65,64 @@ if TYPE_CHECKING or (PILLOW_AVAILABLE and NUMPY_AVAILABLE):
 
 def _create_video_frame(
     text: str,
-    width: int = 1280,
-    height: int = 720,
-    bg_color: str = "white",
-    text_color: str = "black",
+    width: int = 640,
+    height: int = 480,
+    bg_color: str = "#000000",
+    text_color: str = "#FFFFFF",
+    font_size: int = 24,
 ) -> Image.Image:
-    """Create a single video frame with centered text.
-
+    """Create a video frame with centered text.
+    
     Args:
-        text: Text to display on the frame
+        text: The text to display on the frame
         width: Frame width in pixels
         height: Frame height in pixels
-        bg_color: Background color
-        text_color: Text color
-
+        bg_color: Background color as hex string
+        text_color: Text color as hex string
+        font_size: Font size in points
+        
     Returns:
-        PIL Image containing the frame
+        PIL Image object with the rendered frame
     """
-    # Create a blank image with the specified background color
-    frame = Image.new("RGB", (width, height), bg_color)
-    draw = ImageDraw.Draw(frame)
-
-    # Get a font - try to use a system font, fall back to default
+    if not PILLOW_AVAILABLE or not NUMPY_AVAILABLE:
+        raise ImportError(
+            "Video generation requires Pillow and NumPy. "
+            "Install with: pip install pillow numpy\n"
+            "For additional video format support, install moviepy and ffmpeg:\n"
+            "pip install moviepy\n"
+            "Note: ffmpeg must be installed separately on your system.\n"
+            "See https://ffmpeg.org/ for installation instructions."
+        )
+    
+    # Create a new image with the specified background color
+    image = Image.new("RGB", (width, height), bg_color)
+    draw = ImageDraw.Draw(image)
+    
+    # Try to load a nice font, fall back to default
+    font = ImageFont.load_default()
     try:
-        font_size = 40
         font = ImageFont.truetype("Arial.ttf", font_size)
-    except IOError:
-        font = ImageFont.load_default()
-
-    # Calculate text size and position
-    text_bbox = draw.textbbox((0, 0), text, font=font)
-    text_width = text_bbox[2] - text_bbox[0]
-    text_height = text_bbox[3] - text_bbox[1]
-
-    # Calculate position to center the text
-    x = (width - text_width) // 2
-    y = (height - text_height) // 2
-
-    # Draw the text
-    draw.text((x, y), text, fill=text_color, font=font)
-
-    return frame
+    except (IOError, OSError):
+        try:
+            font = ImageFont.truetype(
+                "LiberationSans-Regular.ttf", font_size
+            )
+        except (IOError, OSError):
+            pass  # Use default font
+    
+    font = cast(Any, font)  # Type hint workaround
+    
+    # Calculate text position (centered)
+    if font is not None:
+        text_bbox = draw.textbbox((0, 0), text, font=font)
+        text_width = text_bbox[2] - text_bbox[0]
+        text_height = text_bbox[3] - text_bbox[1]
+        position = ((width - text_width) // 2, (height - text_height) // 2)
+        
+        # Draw the text
+        draw.text(position, text, fill=text_color, font=font)
+    
+    return image
 
 
 def _generate_video_with_ffmpeg(
@@ -87,14 +130,28 @@ def _generate_video_with_ffmpeg(
 ) -> bool:
     """Generate a video file using ffmpeg.
 
+    This function creates a video by generating individual frames using Pillow
+    and then combining them using ffmpeg. It provides better performance and
+    more format support compared to the moviepy backend.
+
     Args:
-        text: Text to display in the video
-        output_path: Path to save the video
-        duration: Duration of the video in seconds
-        fps: Frames per second
+        text: Text to display in the video. Can contain newlines for multi-line text.
+        output_path: Path where the video file will be saved. The extension
+                   determines the output format (e.g., .mp4, .avi).
+        duration: Duration of the video in seconds. Default is 5 seconds.
+        fps: Frames per second. Higher values result in smoother video but larger
+            file sizes. Default is 24 fps.
 
     Returns:
-        bool: True if successful, False otherwise
+        bool: True if video was generated successfully, False otherwise.
+
+    Raises:
+        FileNotFoundError: If ffmpeg is not installed or not in system PATH.
+        subprocess.CalledProcessError: If ffmpeg command fails.
+
+    Note:
+        Requires ffmpeg to be installed and available in the system PATH.
+        Install ffmpeg from https://ffmpeg.org/
     """
     try:
         # Create a temporary directory for frames
@@ -135,14 +192,24 @@ def _generate_video_with_moviepy(
 ) -> bool:
     """Generate a video file using moviepy.
 
+    This function creates a simple video with text using the moviepy library.
+    It's used as a fallback when ffmpeg is not available.
+
     Args:
-        text: Text to display in the video
-        output_path: Path to save the video
-        duration: Duration of the video in seconds
-        fps: Frames per second
+        text: Text to display in the video. Can contain newlines for multi-line text.
+        output_path: Path where the video file will be saved. The extension
+                   determines the output format (e.g., .mp4, .gif).
+        duration: Duration of the video in seconds. Default is 5 seconds.
+        fps: Frames per second. Default is 24 fps.
 
     Returns:
-        bool: True if successful, False otherwise
+        bool: True if video was generated successfully, False otherwise.
+
+    Note:
+        Requires moviepy to be installed. Install with:
+        ```
+        pip install moviepy
+        ```
     """
     try:
         from moviepy.editor import (  # type: ignore
@@ -188,41 +255,58 @@ def _generate_video_with_moviepy(
 
 
 def generate_video_file(
-    content: str, output_path: Path, duration: int = 5, fps: int = 24
-) -> Path:
-    """Generate a video file with the given content.
-
+    content: str,
+    output_path: Union[str, Path],
+    duration: int = 5,
+    fps: int = 24,
+    width: int = 1280,
+    height: int = 720,
+    bg_color: str = "black",
+    text_color: str = "white",
+    font_size: int = 40,
+    use_moviepy: bool = False,
+) -> bool:
+    """Generate a video file with the given text content.
+    
     Args:
         content: Text content to display in the video
-        output_path: Path where the video should be saved
+        output_path: Path where the video file will be saved
         duration: Duration of the video in seconds
         fps: Frames per second
-
+        width: Video width in pixels
+        height: Video height in pixels
+        bg_color: Background color as a color name or hex string
+        text_color: Text color as a color name or hex string
+        font_size: Font size in points
+        use_moviepy: Whether to use moviepy instead of ffmpeg
+        
     Returns:
-        Path to the generated video file
-
+        bool: True if video was generated successfully, False otherwise
+    
     Raises:
         ImportError: If required dependencies are not installed
-        RuntimeError: If video generation fails
     """
     if not PILLOW_AVAILABLE or not NUMPY_AVAILABLE:
         raise ImportError(
-            "Video generation requires Pillow and numpy. "
+            "Video generation requires Pillow and NumPy. "
             "Install with: pip install pillow numpy"
         )
 
     # Ensure output directory exists
+    output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Try ffmpeg first
-    if _generate_video_with_ffmpeg(content, output_path, duration, fps):
-        return output_path
+    # Try ffmpeg first if not explicitly using moviepy
+    if not use_moviepy and _generate_video_with_ffmpeg(
+        content, output_path, duration, fps
+    ):
+        return True
 
     # Fall back to moviepy if available
     if MOVIEPY_AVAILABLE and _generate_video_with_moviepy(
         content, output_path, duration, fps
     ):
-        return output_path
+        return True
 
     error_msg = (
         "Failed to generate video. Make sure you have either moviepy or ffmpeg "
@@ -237,15 +321,38 @@ def generate_video_file(
 # Import registration function at the end to avoid circular imports
 from .registration import register_generator  # noqa: E402
 
-# Register the video generator if dependencies are available
-if PILLOW_AVAILABLE and NUMPY_AVAILABLE:
+# Define registration availability
+REGISTRATION_AVAILABLE = PILLOW_AVAILABLE and NUMPY_AVAILABLE
+
+# Only register generators if all required dependencies are available
+if all([
+    PILLOW_AVAILABLE,
+    NUMPY_AVAILABLE,
+    REGISTRATION_AVAILABLE,
+    register_generator is not None
+]):
     register_generator(["mp4", "avi", "mov", "mkv"])(generate_video_file)
 else:
     # Register a placeholder that will raise an informative error when used
-    def _video_not_available(*args, **kwargs):
+    def _video_not_available(*args, **kwargs):  # type: ignore
+        """Raise an informative error when video generation is not available.
+        
+        This function is registered as a placeholder when required dependencies
+        are not installed.
+        
+        Raises:
+            ImportError: Always raises with installation instructions.
+        """
         raise ImportError(
-            "Video generation requires Pillow and numpy. "
-            "Install with: pip install pillow numpy"
+            "Video generation requires Pillow and NumPy. "
+            "Install with: pip install pillow numpy\n"
+            "For additional video format support, install moviepy and ffmpeg:\n"
+            "pip install moviepy\n"
+            "Note: ffmpeg must be installed separately on your system.\n"
+            "See https://ffmpeg.org/ for installation instructions.\n"
+            "- Linux: sudo apt-get install ffmpeg\n"
+            "- macOS: brew install ffmpeg\n"
+            "- Windows: Download from https://ffmpeg.org/"
         )
     
     register_generator(["mp4", "avi", "mov", "mkv"])(_video_not_available)
