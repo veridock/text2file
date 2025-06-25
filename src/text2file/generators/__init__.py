@@ -113,20 +113,15 @@ try:
     # Import other generators
     from .archives import *  # noqa: F401, F403
     from .office import *  # noqa: F401, F403
+    from .pdf import *  # noqa: F401, F403
     from .video import *  # noqa: F401, F403
     from .image import *  # noqa: F401, F403
     
     # Lazy import of PDF generator to avoid circular imports
-    from .pdf import generate_pdf_file  # noqa: F401
-    register_generator(["pdf"])(generate_pdf_file)
     from .image_set import ImageSetGenerator  # noqa: F401
 
     # Add ImageSetGenerator to __all__
     __all__.append("ImageSetGenerator")
-    
-    # Process any pending registrations
-    from .registration import process_pending_registrations
-    process_pending_registrations()
 
 except ImportError as e:
     print(f"Error importing generators: {e}", file=sys.stderr)  # noqa: T201

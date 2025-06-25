@@ -1,12 +1,9 @@
 """PDF file generators."""
 
-# Use lazy imports to avoid circular imports
-import sys
 from pathlib import Path
-from typing import Any, Optional, Tuple, Type, TypeVar
+from typing import Any, Optional, Tuple, Type
 
-# This will be set when the module is imported in generators/__init__.py
-register_generator = None
+from ...generators.registration import register_generator_directly
 
 def _get_fpdf() -> Tuple[Optional[Type], Optional[Type], Optional[Type]]:
     """Lazy import of fpdf2 to make it an optional dependency."""
@@ -78,16 +75,5 @@ def generate_pdf_file(content: str, output_path: Path, **kwargs: Any) -> Path:
     pdf.output(str(output_path))
     return output_path
 
-def _register_generators():
-    """Register all PDF generators."""
-    if register_generator is not None:
-        register_generator(["pdf"])(generate_pdf_file)
-
-# This will be called after all imports are complete
-def _on_import():
-    if register_generator is not None:
-        _register_generators()
-
-# Register the callback to run after imports are complete
-import atexit
-atexit.register(_on_import)
+# Register the PDF generator
+register_generator_directly(["pdf"], generate_pdf_file)

@@ -43,11 +43,13 @@ def register_generator_directly(extensions: List[str], func: GeneratorFunc) -> N
         extensions: List of file extensions (with or without leading dot)
         func: The generator function to register
     """
+    print(f"DEBUG: Registering generator {func.__name__} for extensions: {extensions}", file=sys.stderr)
     for ext in extensions:
         ext = ext.lstrip('.').lower()
         _generators[ext] = func
         SUPPORTED_EXTENSIONS.add(ext)
-        print(f"Registered generator for .{ext}", file=sys.stderr)
+        print(f"DEBUG: Registered .{ext} in SUPPORTED_EXTENSIONS: {ext in SUPPORTED_EXTENSIONS}", file=sys.stderr)
+    print(f"DEBUG: Current SUPPORTED_EXTENSIONS: {SUPPORTED_EXTENSIONS}", file=sys.stderr)
 
 
 def get_generator(extension: str) -> Callable[..., Path]:
@@ -70,4 +72,5 @@ def get_supported_extensions() -> Set[str]:
     Returns:
         Set of supported file extensions (without leading dots)
     """
+    print(f"DEBUG: Getting supported extensions: {SUPPORTED_EXTENSIONS}", file=sys.stderr)
     return SUPPORTED_EXTENSIONS.copy()

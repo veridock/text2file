@@ -9,7 +9,7 @@ from typing import Optional
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-from ..generators import register_generator
+from ..generators.registration import register_generator_directly
 
 
 def _create_video_frame(
@@ -166,7 +166,6 @@ def _generate_video_with_moviepy(
         return False
 
 
-@register_generator(["mp4", "avi", "mov"])
 def generate_video_file(
     content: str, output_path: Path, duration: int = 5, fps: int = 24
 ) -> Path:
@@ -206,3 +205,7 @@ def generate_video_file(
         "Video generation failed. Please check that you have ffmpeg installed "
         "and available in your system PATH."
     )
+
+
+# Register the video generator
+register_generator_directly(["mp4", "avi", "mov"], generate_video_file)
