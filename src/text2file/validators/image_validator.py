@@ -2,7 +2,7 @@
 
 import imghdr
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 from PIL import Image, UnidentifiedImageError
 
@@ -78,20 +78,12 @@ message=(
                         )
 
                     return ValidationResult(
-                        is_valid=True,
-                        message=f"Valid {detected_format.upper()} image: {width}x{height} pixels",
-                        details={
-                            "format": detected_format,
-                            "width": width,
-                            "height": height,
-                            "mode": img.mode,
-                            "size": path.stat().st_size,
-                        },
+                        is_valid=True, message="Valid image file"
                     )
-
-            except UnidentifiedImageError:
+            except UnidentifiedImageError as e:
                 return ValidationResult(
-                    is_valid=False, message="File is not a valid image"
+                    is_valid=False,
+                    message=f"Invalid or corrupted image: {str(e)}",
                 )
             except Exception as e:
                 return ValidationResult(
