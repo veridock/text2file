@@ -1,13 +1,15 @@
 """File generators and validators for different file formats."""
 
-import importlib
-import os
-import sys
+from datetime import datetime
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, TypeVar, cast
 
-from .image import svg_generator  # noqa: F401
-from .image_set import ImageSetGenerator
+from .registration import (
+    GeneratorFunc,
+    get_generator as _get_generator,
+    get_supported_extensions,
+    register_generator,
+)
 from .validators import (
     FileValidator,
     ImageFileValidator,
@@ -15,48 +17,14 @@ from .validators import (
     TextFileValidator,
     ValidationResult,
     cleanup_invalid_files,
+    get_validator as _get_validator,
+    validate_file,
 )
-from .validators import get_validator as _get_validator
-from .validators import validate_file
 
-# Type alias for generator functions
-GeneratorFunc = Callable[..., Path]
-
-# Dictionary to store registered generators
-_generators: Dict[str, GeneratorFunc] = {}
-
-# Set of supported file extensions (without leading dot)
-SUPPORTED_EXTENSIONS: Set[str] = set()
-
-
-def register_generator(
-    extensions: List[str],
-) -> Callable[[GeneratorFunc], GeneratorFunc]:
-    """Decorator to register a generator function for specific file extensions.
-
-    Args:
-        extensions: List of file extensions (with or without leading dot) that this generator supports
-
-    Returns:
-        Decorator function that registers the generator
-    """
-
-    def decorator(func: GeneratorFunc) -> GeneratorFunc:
-        """Register the generator function for the given extensions."""
-        print(
-            f"Registering generator {func.__name__} for extensions: {extensions}",
-            file=sys.stderr,
-        )
-        for ext in extensions:
-            ext_lower = ext.lower().lstrip(".")
-            print(f"  - Adding extension: {ext_lower}", file=sys.stderr)
-            _generators[ext_lower] = func
-            SUPPORTED_EXTENSIONS.add(ext_lower)
-        print(f"  Current generators: {list(_generators.keys())}", file=sys.stderr)
-        return func
-
-    return decorator
-
+# Re-export registration functions
+register_generator = register_generator
+get_generator = _get_generator
+SUPPORTED_EXTENSIONS = get_supported_extensions()
 
 # Re-export get_validator from validators module
 get_validator = _get_validator
@@ -80,37 +48,6 @@ __all__ = [
 ]
 
 
-def register_generator(extensions: List[str]):
-    """Decorator to register a generator function for specific extensions.
-
-    Args:
-        extensions: List of file extensions (without leading dot) that this
-            generator handles
-    """
-
-    def decorator(func: GeneratorFunc) -> GeneratorFunc:
-        for ext in extensions:
-            ext_lower = ext.lower().lstrip(".")
-            _generators[ext_lower] = func
-            SUPPORTED_EXTENSIONS.add(ext_lower)
-        return func
-
-    return decorator
-
-
-def get_generator(extension: str) -> Optional[GeneratorFunc]:
-    """Get the generator function for a given file extension.
-
-    Args:
-        extension: File extension (with or without leading dot)
-
-    Returns:
-        Generator function or None if not found
-    """
-    ext = extension.lower().lstrip(".")
-    return _generators.get(ext)
-
-
 def generate_file(
     content: str,
     extension: str,
@@ -132,32 +69,28 @@ def generate_file(
         ValueError: If no generator is found for the extension
         IOError: If there's an error writing the file
     """
-    ext = extension.lower().lstrip(".")
-    generator = get_generator(ext)
-
+    # Get the generator function for the extension
+    generator = get_generator(extension)
     if generator is None:
-        raise ValueError(f"No generator found for extension: {ext}")
+        raise ValueError(f"No generator found for extension: {extension}")
 
     # Create output directory if it doesn't exist
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Generate filename with timestamp
-    from datetime import datetime
-
+    # Generate a unique filename
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{prefix}_{timestamp}.{ext}"
-    filepath = output_dir / filename
+    filename = f"{prefix}_{timestamp}.{extension.lstrip('.')}"
+    output_path = output_dir / filename
 
-    # Generate the file
-    print(f"Generating file: {filepath}", file=sys.stderr)
     try:
-        # Call the generator function with the content and output path
-        result_path = generator(content, filepath, **{})
-        print(f"Successfully generated file: {result_path}", file=sys.stderr)
-        return result_path
+        # Call the generator function
+        generated_path = generator(content, output_path)
+        return generated_path
     except Exception as e:
-        print(f"Error generating file: {e}", file=sys.stderr)
-        raise
+        # Clean up partially created files
+        if output_path.exists():
+            output_path.unlink()
+        raise IOError(f"Error generating {extension} file: {str(e)}")
 
 
 # Explicitly import and register the text generator first
@@ -201,7 +134,6 @@ print("Importing other generators...", file=sys.stderr)
 from .archives import *  # noqa: F401, F403
 from .image import *  # noqa: F401, F403
 from .image_set import *  # noqa: F401, F403
-from .image import svg_generator  # noqa: F401
 from .office import *  # noqa: F401, F403
 from .pdf import *  # noqa: F401, F403
 from .text import *  # noqa: F401, F403
