@@ -1,6 +1,8 @@
 """Configuration file generators."""
 
 import json
+import os
+import textwrap
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
@@ -33,52 +35,44 @@ def _parse_config_content(content: str) -> Dict[str, Any]:
         logging.debug("Empty content after strip, returning empty dict")
         return {}
     
-    # Clean up the content by removing extra indentation
+    # Clean up the content by normalizing indentation
     lines = content.splitlines()
     if lines:
-        # Find the minimum indentation (ignoring empty lines)
-        min_indent = float('inf')
-        for line in lines:
-            stripped = line.lstrip()
-            if stripped:  # Skip empty lines
-                indent = len(line) - len(stripped)
-                min_indent = min(min_indent, indent)
-        
-        logging.debug(f"Minimum indentation: {min_indent}")
-        
-        # Remove the minimum indentation from all non-empty lines
-        if min_indent > 0:
-            content = '\n'.join(
-                line[min_indent:] if line.strip() else line
-                for line in lines
-            )
-            logging.debug(f"Content after removing indentation: {content!r}")
-        
-    # Try parsing as JSON
-    if content.startswith('{') or content.startswith('['):
+        # Remove common indentation
+        content = textwrap.dedent(content)
+        logging.debug(f"Content after dedent: {content!r}")
+    
+    # Try parsing as JSON first (most specific check)
+    content_stripped = content.strip()
+    if content_stripped.startswith('{') or content_stripped.startswith('['):
         try:
-            return json.loads(content)
-        except json.JSONDecodeError:
-            pass
+            result = json.loads(content_stripped)
+            logging.debug(f"Successfully parsed as JSON: {result!r}")
+            return result
+        except json.JSONDecodeError as e:
+            logging.debug(f"JSON parsing failed: {e}")
     
     # Try parsing as YAML
     try:
         logging.debug("Trying to parse as YAML")
-        # Try with safe_load first
+        # First try with safe_load
         result = yaml.safe_load(content)
         logging.debug(f"Result from yaml.safe_load: {result!r}")
-        if result is not None:  # Only return if we got a valid result
-            return result
-            
+        
         # If we got None but content isn't empty, try with full_load
-        if content.strip():
+        if result is None and content_stripped:
             logging.debug("Trying yaml.full_load")
             result = yaml.full_load(content)
             logging.debug(f"Result from yaml.full_load: {result!r}")
-            if result is not None:
-                return result
+            
+        if result is not None:  # Only return if we got a valid result
+            return result
+            
     except (yaml.YAMLError, AttributeError) as e:
         logging.debug(f"YAML parsing error: {e}")
+    
+    # If we get here, try parsing as INI-style
+    logging.debug("Falling back to INI parsing")
         
     # If we get here, try parsing as INI-style
     config = {}
