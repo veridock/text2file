@@ -1,7 +1,5 @@
 """Validator for shell script files."""
 
-"""Validator for shell script files."""
-
 import re
 import shutil
 import subprocess
@@ -39,7 +37,8 @@ class ShellScriptValidator(BaseValidator):
             content: The shell script content
 
         Returns:
-            Tuple of (interpreter, path) if shebang found, (None, None) otherwise
+            Tuple of (interpreter, path) if shebang found,
+            (None, None) otherwise
         """
         if not content.startswith('#!'):
             return None, None
@@ -164,10 +163,9 @@ class ShellScriptValidator(BaseValidator):
                 message=f"Shell script validation failed ({message})",
                 details=details,
             )
-        else:
-            details["info"] = (
-                "shellcheck is not installed, skipping advanced validation"
-            )
+        
+        details["info"] = "shellcheck is not installed, " \
+                       "skipping advanced validation"
 
         return ValidationResult(
             is_valid=True,

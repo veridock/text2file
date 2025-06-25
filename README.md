@@ -95,12 +95,10 @@ text2file [COMMAND] [OPTIONS]
 
 #### Generate a text file
 ```bash
-text2file "Hello, World!" txt
-```
-
-```bash
 text2file generate --content "Hello, World!" --extension txt
 ```
+
+This will create a file named `output.txt` with the content "Hello, World!" in the current directory.
 
 #### Generate a set of images from a JSON configuration
 

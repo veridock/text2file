@@ -75,7 +75,9 @@ class ShGenerator(BaseGenerator):
 
         # Add content
         lines.append("")
-        lines.append('echo "' + escaped_content + '"')
+        # Only add the content directly, without an extra echo
+        # The content is already properly escaped
+        lines.append(escaped_content)
 
         # Ensure there's a trailing newline
         script_content = "\n".join(lines).strip() + "\n"

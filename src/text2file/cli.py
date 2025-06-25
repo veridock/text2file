@@ -2,17 +2,14 @@
 
 import json
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, cast
 
 import click
-from rich.console import Console
-from rich.table import Table
 
 from .generators import (
     SUPPORTED_EXTENSIONS,
     ImageSetGenerator,
     ValidationResult,
-    _generators,
     cleanup_invalid_files,
     generate_file,
     validate_file,
@@ -120,8 +117,21 @@ def generate_set(
 
 
 @cli.command()
-@click.argument("content")
-@click.argument("extensions", nargs=-1, required=True)
+@click.argument("content", required=False)
+@click.argument("extensions", nargs=-1, required=False)
+@click.option(
+    "--content",
+    "content_option",
+    type=str,
+    help="Content to write to the file(s)",
+)
+@click.option(
+    "--extension",
+    "-e",
+    "extensions_option",
+    multiple=True,
+    help="File extension(s) for the generated file(s)",
+)
 @click.option(
     "--output-dir",
     "-o",
@@ -142,14 +152,40 @@ def generate_set(
     help="Enable debug output",
 )
 def generate(
-    content: str, extensions: List[str], output_dir: Path, prefix: str, debug: bool
+    content: Optional[str],
+    extensions: List[str],
+    content_option: Optional[str],
+    extensions_option: List[str],
+    output_dir: Path,
+    prefix: str,
+    debug: bool,
 ) -> None:
-    """Generate files with the given content and extensions."""
+    """Generate files with the given content and extensions.
+    
+    Supports both short and long syntax:
+    
+    Short syntax:
+        text2file "Hello, World!" txt md html
+        
+    Long syntax:
+        text2file generate --content "Hello, World!" --extension txt --extension md
+    """
+    # Use the option values if provided, otherwise use positional arguments
+    final_content = content_option if content_option is not None else content
+    final_extensions = list(extensions_option) if extensions_option else list(extensions)
+    
+    # Validate inputs
+    if not final_content:
+        raise click.UsageError("Missing content. Use --content or provide it as the first argument.")
+    
+    if not final_extensions:
+        raise click.UsageError("No extensions provided. Use --extension or provide them as additional arguments.")
+    
     output_dir.mkdir(parents=True, exist_ok=True)
 
     if debug:
         click.echo(f"Debug: Working directory: {Path.cwd()}", err=True)
-        click.echo(f"Debug: Requested extensions: {', '.join(extensions)}", err=True)
+        click.echo(f"Debug: Requested extensions: {', '.join(final_extensions)}", err=True)
         click.echo(
             f"Debug: Supported extensions: {', '.join(sorted(SUPPORTED_EXTENSIONS))}",
             err=True,
@@ -157,7 +193,7 @@ def generate(
 
     # Validate extensions
     invalid_exts = [
-        ext for ext in extensions if ext.lower().lstrip(".") not in SUPPORTED_EXTENSIONS
+        ext for ext in final_extensions if ext.lower().lstrip(".") not in SUPPORTED_EXTENSIONS
     ]
     if invalid_exts:
         raise click.UsageError(
@@ -167,9 +203,9 @@ def generate(
 
     # Generate files
     generated_files = []
-    for ext in extensions:
+    for ext in final_extensions:
         try:
-            filepath = generate_file(content, ext, output_dir, prefix)
+            filepath = generate_file(final_content, ext, output_dir, prefix)
             click.echo(f"✓ Generated: {filepath}")
             generated_files.append(filepath)
         except Exception as e:
