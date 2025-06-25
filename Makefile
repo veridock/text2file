@@ -56,6 +56,14 @@ install-deps:
 	@echo -e "$(BLUE)Installing converter dependencies...$(NC)"
 	@bash $(CONFIG_DIR)/install_dependencies.sh
 
+# Publish the package to PyPI
+publish:
+	@echo "Building package..."
+	poetry version patch
+	poetry build
+	@echo "\nPublishing to PyPI..."
+	poetry publish
+
 # Prevent make from interpreting arguments as targets
 %:
 	@:

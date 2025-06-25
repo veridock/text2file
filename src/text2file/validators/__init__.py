@@ -41,6 +41,19 @@ from .archive_validator import (
 
 from .pdf_validator import PdfValidator
 
+from .office_validator import (
+    OfficeValidator,
+    DocxValidator,
+    XlsxValidator,
+    PptxValidator,
+    OdtValidator,
+    OdsValidator,
+    OdpValidator,
+    DocValidator,
+    XlsValidator,
+    PptValidator,
+)
+
 from .video_validator import (
     VideoValidator,
     Mp4Validator,
@@ -90,6 +103,18 @@ __all__ = [
     
     # PDF
     'PdfValidator',
+    
+    # Office
+    'OfficeValidator',
+    'DocxValidator',
+    'XlsxValidator',
+    'PptxValidator',
+    'OdtValidator',
+    'OdsValidator',
+    'OdpValidator',
+    'DocValidator',
+    'XlsValidator',
+    'PptValidator',
     
     # Video
     'VideoValidator',

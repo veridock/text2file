@@ -18,14 +18,35 @@ from .validators import (
     validate_file,
 )
 
-# Type variable for generator functions
-GeneratorFunc = Callable[[str, Path, str], Path]
+# Type alias for generator functions
+GeneratorFunc = Callable[..., Path]
 
-# Dictionary to store generator functions by extension
+# Dictionary to store registered generators
 _generators: Dict[str, GeneratorFunc] = {}
 
-# Set of supported extensions
+# Set of supported file extensions (without leading dot)
 SUPPORTED_EXTENSIONS: Set[str] = set()
+
+def register_generator(extensions: List[str]) -> Callable[[GeneratorFunc], GeneratorFunc]:
+    """Decorator to register a generator function for specific file extensions.
+    
+    Args:
+        extensions: List of file extensions (with or without leading dot) that this generator supports
+        
+    Returns:
+        Decorator function that registers the generator
+    """
+    def decorator(func: GeneratorFunc) -> GeneratorFunc:
+        """Register the generator function for the given extensions."""
+        print(f"Registering generator {func.__name__} for extensions: {extensions}", file=sys.stderr)
+        for ext in extensions:
+            ext_lower = ext.lower().lstrip('.')
+            print(f"  - Adding extension: {ext_lower}", file=sys.stderr)
+            _generators[ext_lower] = func
+            SUPPORTED_EXTENSIONS.add(ext_lower)
+        print(f"  Current generators: {list(_generators.keys())}", file=sys.stderr)
+        return func
+    return decorator
 
 # Re-export get_validator from validators module
 get_validator = _get_validator
@@ -115,29 +136,54 @@ def generate_file(
     filepath = output_dir / filename
     
     # Generate the file
-    print("Importing generator modules...", file=sys.stderr)
+    print(f"Generating file: {filepath}", file=sys.stderr)
+    try:
+        # Call the generator function with the content and output path
+        result_path = generator(content, filepath, **{})
+        print(f"Successfully generated file: {result_path}", file=sys.stderr)
+        return result_path
+    except Exception as e:
+        print(f"Error generating file: {e}", file=sys.stderr)
+        raise
 
-# First import the register_generator function
-from .base import register_generator
-
-# Explicitly register the text generator
+# Explicitly import and register the text generator first
 try:
-    print("Registering text generator...", file=sys.stderr)
+    print("Importing text generator...", file=sys.stderr)
     from .text import generate_text_file
-    
-    # Manually register the text generator
+    # Manually register the text generator with all its extensions
     register_generator(["txt", "md", "html", "css", "js", "py", "json", "csv"])(generate_text_file)
     print("Successfully registered text generator", file=sys.stderr)
-    print(f"Registered extensions: {_generators.keys()}", file=sys.stderr)
+    print(f"Registered extensions after text: {sorted(SUPPORTED_EXTENSIONS)}", file=sys.stderr)
 except ImportError as e:
-    print(f"Failed to register text generator: {e}", file=sys.stderr)
+    print(f"Failed to import text generator: {e}", file=sys.stderr)
+    raise
 
-# Import other generators
+def get_generator(extension: str) -> Optional[GeneratorFunc]:
+    """Get the generator function for a file extension.
+    
+    Args:
+        extension: File extension (with or without leading dot)
+        
+    Returns:
+        Generator function if found, None otherwise
+    """
+    ext = extension.lower().lstrip('.')
+    print(f"Looking up generator for extension: {ext!r}", file=sys.stderr)
+    print(f"Available extensions: {sorted(SUPPORTED_EXTENSIONS)}", file=sys.stderr)
+    generator = _generators.get(ext)
+    print(f"Found generator: {generator is not None}", file=sys.stderr)
+    return generator
+
+# Import other generators after defining the registration system
 print("Importing other generators...", file=sys.stderr)
 from .images import *  # noqa: F401, F403
 from .office import *  # noqa: F401, F403
 from .archives import *  # noqa: F401, F403
 from .pdf import *  # noqa: F401, F403
+
+# After all imports, print final state
+print(f"Final registered generators: {list(_generators.keys())}", file=sys.stderr)
+print(f"Final supported extensions: {sorted(SUPPORTED_EXTENSIONS)}", file=sys.stderr)
 
 # Then import remaining modules
 for module in os.listdir(os.path.dirname(__file__)):

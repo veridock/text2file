@@ -111,7 +111,8 @@ class TestText2File(TestCase):
     
     def test_generate_archive_file(self):
         """Test generating archive files."""
-        for ext in ["zip", "tar.gz"]:
+        # Test with supported archive formats
+        for ext in ["zip", "tar.gz", "tgz"]:
             with self.subTest(ext=ext):
                 output_path = generate_file(
                     self.test_content,
@@ -121,5 +122,11 @@ class TestText2File(TestCase):
                 )
                 
                 self.assertTrue(output_path.exists())
-                self.assertIn(output_path.suffix, [f".{ext}", ".tgz"])
+                # Check for valid extensions (.zip, .tar.gz, .tgz)
+                if ext == "tar.gz":
+                    self.assertEqual(''.join(output_path.suffixes), ".tar.gz")
+                elif ext == "tgz":
+                    self.assertEqual(output_path.suffix, ".tgz")
+                else:
+                    self.assertEqual(output_path.suffix, f".{ext}")
                 self.assertGreater(output_path.stat().st_size, 0)
