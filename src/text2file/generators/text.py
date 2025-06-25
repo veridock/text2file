@@ -8,7 +8,7 @@ from ..generators import register_generator
 
 
 @register_generator(["txt", "md", "html", "css", "js", "py", "json", "csv"])
-def generate_text_file(content: str, output_path: Path) -> Path:
+def generate_text_file(content: str, output_path: Path, **kwargs) -> Path:
     """Generate a text-based file with the given content.
 
     Args:

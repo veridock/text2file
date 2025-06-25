@@ -5,9 +5,12 @@ from pathlib import Path
 from typing import List, Optional
 
 import click
+from rich.console import Console
+from rich.table import Table
 
 from .generators import (
   SUPPORTED_EXTENSIONS,
+  _generators,
   ValidationResult,
   ImageSetGenerator,
   cleanup_invalid_files,
@@ -131,22 +134,34 @@ def generate_set(
   default="generated",
   help="Prefix for generated filenames",
 )
-def generate(content: str, extensions: List[str], output_dir: Path, prefix: str) -> None:
+@click.option(
+  "--debug",
+  is_flag=True,
+  help="Enable debug output",
+)
+def generate(content: str, extensions: List[str], output_dir: Path, prefix: str, debug: bool) -> None:
   """Generate files with the given content and extensions."""
   output_dir.mkdir(parents=True, exist_ok=True)
 
-  # Debug output
-  click.echo(f"Requested extensions: {extensions}", err=True)
-  click.echo(f"Supported extensions: {sorted(SUPPORTED_EXTENSIONS)}", err=True)
+  if debug:
+    click.echo("=== DEBUG MODE ===", err=True)
+    click.echo(f"Working directory: {Path.cwd()}", err=True)
+    click.echo(f"Requested extensions: {extensions!r}", err=True)
+    click.echo(f"Supported extensions: {sorted(SUPPORTED_EXTENSIONS)!r}", err=True)
+    click.echo(f"_generators keys: {sorted(_generators.keys())!r}", err=True)
 
-  # Debug: Print type and value of each extension
-  for ext in extensions:
-    click.echo(f"Extension: {ext!r}, type: {type(ext)}, in SUPPORTED_EXTENSIONS: {ext.lower() in SUPPORTED_EXTENSIONS}",
-               err=True)
+    # Print detailed extension info
+    click.echo("\nExtension details:", err=True)
+    for ext in extensions:
+      normalized = ext.lower().lstrip('.')
+      click.echo(f"  Extension: {ext!r} -> normalized: {normalized!r}", err=True)
+      click.echo(f"    in SUPPORTED_EXTENSIONS: {normalized in SUPPORTED_EXTENSIONS}", err=True)
+      click.echo(f"    in _generators: {normalized in _generators}", err=True)
+      click.echo(f"    generator func: {_generators.get(normalized, 'NONE')}", err=True)
 
   # Validate extensions
   invalid_exts = [
-    ext for ext in extensions if ext.lower() not in SUPPORTED_EXTENSIONS
+    ext for ext in extensions if ext.lower().lstrip('.') not in SUPPORTED_EXTENSIONS
   ]
   if invalid_exts:
     raise click.UsageError(

@@ -2,6 +2,7 @@
 
 import importlib
 import os
+import sys
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Set
 
@@ -58,10 +59,13 @@ def register_generator(
             generator handles
     """
     def decorator(func: GeneratorFunc) -> GeneratorFunc:
+        print(f"Registering generator {func.__name__} for extensions: {extensions}", file=sys.stderr)
         for ext in extensions:
             ext_lower = ext.lower().lstrip('.')
+            print(f"  - Adding extension: {ext_lower}", file=sys.stderr)
             _generators[ext_lower] = func
             SUPPORTED_EXTENSIONS.add(ext_lower)
+        print(f"  Current generators: {_generators.keys()}", file=sys.stderr)
         return func
     return decorator
 
@@ -76,7 +80,11 @@ def get_generator(extension: str) -> Optional[GeneratorFunc]:
         Generator function or None if not found
     """
     ext = extension.lower().lstrip('.')
-    return _generators.get(ext)
+    print(f"Looking up generator for extension: {ext!r}", file=sys.stderr)  # Debug
+    print(f"Available extensions: {sorted(_generators.keys())}", file=sys.stderr)  # Debug
+    generator = _generators.get(ext)
+    print(f"Found generator: {generator is not None}", file=sys.stderr)  # Debug
+    return generator
 
 
 def generate_file(
