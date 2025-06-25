@@ -1,12 +1,24 @@
-# text2file
+# Text2File
 
-A powerful utility for generating test files in various formats from text content. Perfect for testing file processing pipelines, creating sample data, or generating documentation assets.
+[![PyPI version](https://badge.fury.io/py/text2file.svg)](https://badge.fury.io/py/text2file)
+[![Python Version](https://img.shields.io/pypi/pyversions/text2file.svg)](https://pypi.org/project/text2file/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
+A powerful utility to generate test files in various formats from text content. Perfect for testing, development, and automation tasks.
 
 ## Features
 
-- Generate files in multiple formats from a single command
-- Supports various output formats:
-  - Text files (`.txt`, `.md`, `.html`, etc.)
+- Generate files in multiple formats with a single command
+- Support for various file types:
+  - **Text**: `.txt`, `.md`, `.html`, `.css`, `.js`, `.py`, `.json`, `.csv`
+  - **Documents**: `.pdf`, `.docx`, `.odt`
+  - **Spreadsheets**: `.xlsx`
+  - **Images**: `.jpg`, `.jpeg`, `.png`, `.bmp`, `.gif`
+  - **Archives**: `.zip`, `.tar`, `.tar.gz`, `.tgz`
+- Customizable output directory and filename prefix
+- Clean and simple command-line interface
+- Extensible architecture for adding new file formats
   - PDF documents (`.pdf`)
   - Image files (`.jpg`, `.png`, `.bmp`, `.gif`)
 - Customizable output with text wrapping and formatting

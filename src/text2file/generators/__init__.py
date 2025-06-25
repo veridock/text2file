@@ -1,13 +1,9 @@
 """File generators for different file formats."""
 
 import importlib
-import inspect
 import os
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Set, Type, TypeVar, cast
-
-from PIL import Image, ImageDraw, ImageFont
-from fpdf import FPDF, XPos, YPos
+from typing import Callable, Dict, List, Optional, Set
 
 # Type variable for generator functions
 GeneratorFunc = Callable[[str, Path, str], Path]
@@ -19,11 +15,14 @@ _generators: Dict[str, GeneratorFunc] = {}
 SUPPORTED_EXTENSIONS: Set[str] = set()
 
 
-def register_generator(extensions: List[str]) -> Callable[[GeneratorFunc], GeneratorFunc]:
+def register_generator(
+    extensions: List[str]
+) -> Callable[[GeneratorFunc], GeneratorFunc]:
     """Decorator to register a generator function for specific extensions.
     
     Args:
-        extensions: List of file extensions (without leading dot) that this generator handles
+        extensions: List of file extensions (without leading dot) that this
+                   generator handles
     """
     def decorator(func: GeneratorFunc) -> GeneratorFunc:
         for ext in extensions:
@@ -48,8 +47,8 @@ def get_generator(extension: str) -> Optional[GeneratorFunc]:
 
 
 def generate_file(
-    content: str, 
-    extension: str, 
+    content: str,
+    extension: str,
     output_dir: Path = Path.cwd(),
     prefix: str = "generated"
 ) -> Path:
