@@ -1,11 +1,12 @@
 """Validators for video file formats."""
 
+"""Validators for video file formats."""
+
 import json
 import subprocess
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Optional
 
-from ..generators.base import BaseGenerator
 from .base import BaseValidator, ValidationResult
 
 # Try to import OpenCV for video validation
@@ -20,9 +21,10 @@ except ImportError:
 # Try to import ffprobe for more detailed video info
 HAS_FFPROBE = bool(
     subprocess.run(
-        ["which", "ffprobe"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    ).returncode
-    == 0
+        ["which", "ffprobe"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    ).returncode == 0
 )
 
 
@@ -47,19 +49,30 @@ class VideoValidator(BaseValidator):
             path = Path(file_path)
             if not path.exists():
                 return ValidationResult(
-                    is_valid=False, message=f"File not found: {file_path}"
+                    is_valid=False,
+                    message=f"File not found: {file_path}"
                 )
 
             if not path.is_file():
                 return ValidationResult(
-                    is_valid=False, message=f"Not a file: {file_path}"
+                    is_valid=False,
+                    message=f"Not a file: {file_path}"
                 )
 
-            # Check file extension matches expected format
-            if cls.FORMAT and not path.name.lower().endswith(f".{cls.FORMAT.lower()}"):
+            # Check file extension against expected format
+            if cls.FORMAT and not file_path.lower().endswith(f".{cls.FORMAT}"):
                 return ValidationResult(
                     is_valid=False,
-                    message=f"Expected {cls.FORMAT.upper()} file, got {path.suffix}",
+                    message=(
+                        f"Expected .{cls.FORMAT} file, got {Path(file_path).suffix}"
+                    )
+                )
+
+            # If all else fails, check if the file is not empty
+            if path.stat().st_size == 0:
+                return ValidationResult(
+                    is_valid=False,
+                    message="File is empty"
                 )
 
             # Try to validate with OpenCV first
@@ -68,7 +81,7 @@ class VideoValidator(BaseValidator):
                 if result.is_valid:
                     return result
 
-            # Fall back to ffprobe if available
+            # If OpenCV fails or is not available, try ffprobe
             if HAS_FFPROBE:
                 result = cls._validate_with_ffprobe(file_path)
                 if result.is_valid:
@@ -101,6 +114,12 @@ class VideoValidator(BaseValidator):
         try:
             # Open the video file
             cap = cv2.VideoCapture(file_path)
+
+            if not os.access(file_path, os.R_OK):
+                return ValidationResult(
+                    is_valid=False,
+                    message=f"File not readable: {file_path}"
+                )
 
             if not cap.isOpened():
                 return ValidationResult(
@@ -146,85 +165,71 @@ class VideoValidator(BaseValidator):
 
     @classmethod
     def _validate_with_ffprobe(cls, file_path: str) -> ValidationResult:
-        """Validate a video file using ffprobe."""
+        """Validate video file using ffprobe.
+        
+        Args:
+            file_path: Path to the video file
+            
+        Returns:
+            ValidationResult indicating if the video is valid
+        """
         if not HAS_FFPROBE:
-            return ValidationResult(is_valid=False, message="ffprobe is not available")
-
+            return ValidationResult(
+                is_valid=False,
+                message="ffprobe is not available"
+            )
+            
         try:
             # Run ffprobe to get video information
-            cmd = [
-                "ffprobe",
-                "-v",
-                "error",
-                "-select_streams",
-                "v:0",
-                "-show_entries",
-                "stream=codec_name,width,height,r_frame_rate,duration,nb_frames",
-                "-show_entries",
-                "format=format_name,duration,size",
-                "-of",
-                "json",
-                file_path,
-            ]
-
             result = subprocess.run(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+                [
+                    "ffprobe",
+                    "-v", "error",
+                    "-select_streams", "v:0",
+                    "-show_entries", "stream=codec_name,width,height,"
+                                    "r_frame_rate,duration,nb_frames",
+                    "-show_entries", "format=format_name,duration,size",
+                    "-of", "json",
+                    file_path
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=True
             )
 
-            if result.returncode != 0:
-                return ValidationResult(
-                    is_valid=False, message=f"ffprobe error: {result.stderr.strip()}"
-                )
-
             # Parse the JSON output
-            info = json.loads(result.stdout)
-
-            if not info.get("streams") or not info["streams"]:
+            try:
+                info = json.loads(result.stdout)
+                if not info:
+                    return ValidationResult(
+                        is_valid=False,
+                        message="No video information found"
+                    )
+                
+                # Check if we have at least one video stream
+                if 'streams' not in info or not info['streams']:
+                    return ValidationResult(
+                        is_valid=False,
+                        message="No video streams found"
+                    )
+                
+                format_name = info.get('format', {}).get('format_name', 'unknown')
                 return ValidationResult(
-                    is_valid=False, message="No video streams found in the file"
+                    is_valid=True,
+                    message=f"Video is valid: {format_name}"
                 )
 
-            # Get video stream info
-            video_stream = info["streams"][0]
-            format_info = info.get("format", {})
+            except json.JSONDecodeError:
+                return ValidationResult(
+                    is_valid=False,
+                    message="Invalid JSON output from ffprobe"
+                )
 
-            # Calculate FPS from r_frame_rate (e.g., "30/1" -> 30.0)
-            fps = 0.0
-            if "r_frame_rate" in video_stream:
-                try:
-                    num, denom = map(float, video_stream["r_frame_rate"].split("/"))
-                    if denom > 0:
-                        fps = num / denom
-                except (ValueError, ZeroDivisionError):
-                    pass
-
-            # Get frame count and duration
-            frame_count = int(video_stream.get("nb_frames", 0))
-            duration = float(video_stream.get("duration", 0))
-
-            # If duration is not available in stream, try format
-            if duration <= 0 and "duration" in format_info:
-                duration = float(format_info["duration"])
-
-            # If frame count is not available, estimate from duration and FPS
-            if frame_count <= 0 and duration > 0 and fps > 0:
-                frame_count = int(duration * fps)
-
+            # If we get here, something went wrong
             return ValidationResult(
-                is_valid=True,
-                message=f"Valid {video_stream.get('codec_name', 'video')}: "
-                f"{video_stream.get('width', 0)}x{video_stream.get('height', 0)} @ {fps:.2f} fps",
-                details={
-                    "codec": video_stream.get("codec_name", "unknown"),
-                    "width": video_stream.get("width"),
-                    "height": video_stream.get("height"),
-                    "fps": fps,
-                    "frame_count": frame_count,
-                    "duration_seconds": duration,
-                    "format": format_info.get("format_name", "").split(",")[0],
-                    "size": int(format_info.get("size", 0)),
-                    "validated_with": "ffprobe",
-                },
+                is_valid=False,
+                message="Unknown validation error occurred"
             )
 
         except Exception as e:

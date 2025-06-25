@@ -1,9 +1,8 @@
 """Validators for office document formats."""
 
-import os
 import zipfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union
+from typing import Dict, List, TypeVar, Union
 
 from .base import BaseValidator, ValidationResult
 
@@ -43,7 +42,7 @@ class OfficeValidator(BaseValidator):
         ".ppt",  # Legacy MS Office formats
     ]
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the office document validator."""
         super().__init__(self.MIME_TYPES, self.EXTENSIONS)
 
@@ -73,9 +72,10 @@ class OfficeValidator(BaseValidator):
                 valid=False, messages=[f"Unsupported office document extension: {ext}"]
             )
 
-        # For Office Open XML formats (docx, xlsx, pptx) and ODF formats (odt, ods, odp),
-        # we can validate by checking if it's a valid ZIP archive with the expected structure
-        if ext in [".docx", ".xlsx", ".pptx", ".odt", ".ods", ".odp"]:
+        # For Office Open XML formats (docx, xlsx, pptx) and ODF formats
+        # (odt, ods, odp), we can validate by checking if it's a valid ZIP
+        # archive with the expected structure
+        if ext in (".docx", ".xlsx", ".pptx", ".odt", ".ods", ".odp"):
             return self._validate_office_open_xml(file_path)
 
         # For legacy formats, we can only do basic validation
@@ -95,7 +95,8 @@ class OfficeValidator(BaseValidator):
             # Check if the file is a valid ZIP archive
             if not zipfile.is_zipfile(file_path):
                 return ValidationResult(
-                    valid=False, messages=[f"Not a valid ZIP archive: {file_path}"]
+                    valid=False,
+                    messages=[f"Not a ZIP archive: {file_path}"],
                 )
 
             # Basic structure validation by checking for required files
@@ -120,20 +121,22 @@ class OfficeValidator(BaseValidator):
                             if not any(
                                 f.lower() == req_file.lower() for f in file_list
                             ):
+                                msg = (
+                                    f"Missing required file in {ext} "
+                                    f"archive: {req_file}"
+                                )
                                 return ValidationResult(
                                     valid=False,
-                                    messages=[
-                                        f"Missing required file in {ext} archive: {req_file}"
-                                    ],
+                                    messages=[msg]
                                 )
 
             return ValidationResult(valid=True)
 
         except Exception as e:
-            return ValidationResult(
-                valid=False,
-                messages=[f"Error validating office document {file_path}: {str(e)}"],
+            error_msg = (
+                f"Error validating office document {file_path}: {str(e)}"
             )
+            return ValidationResult(valid=False, messages=[error_msg])
 
     def _validate_legacy_office(self, file_path: Path) -> ValidationResult:
         """
@@ -173,9 +176,7 @@ class OfficeValidator(BaseValidator):
 
                 return ValidationResult(
                     valid=False,
-                    messages=[
-                        f"File does not appear to be a valid office document: {file_path}"
-                    ],
+                    messages=[f"Invalid office document: {file_path}"]
                 )
 
         except Exception as e:
