@@ -2,12 +2,24 @@
 
 import os
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 
-import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+# Check if Pillow is available
+try:
+    from PIL import Image, ImageDraw, ImageFont
+    PILLOW_AVAILABLE = True
+except ImportError:
+    PILLOW_AVAILABLE = False
+
+# Check if NumPy is available
+try:
+    import numpy as np
+    NUMPY_AVAILABLE = True
+except ImportError:
+    NUMPY_AVAILABLE = False
 
 from ..generators.registration import register_generator_directly
 
@@ -207,5 +219,13 @@ def generate_video_file(
     )
 
 
-# Register the video generator
-register_generator_directly(["mp4", "avi", "mov"], generate_video_file)
+# Register the video generator if dependencies are available
+if PILLOW_AVAILABLE and NUMPY_AVAILABLE:
+    from ..registration import register_generator_directly
+    register_generator_directly(["mp4", "avi", "mov"], generate_video_file)
+elif __name__ == "__main__":
+    # Print warnings if running as a script
+    if not PILLOW_AVAILABLE:
+        print("Warning: Pillow is not installed. Video generation will not be available.")
+    if not NUMPY_AVAILABLE:
+        print("Warning: NumPy is not installed. Video generation will not be available.")
