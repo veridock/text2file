@@ -1,12 +1,12 @@
 """Utility functions for file operations."""
 
+import hashlib
+import mimetypes
 import os
 import shutil
-import mimetypes
 import tempfile
-import hashlib
 from pathlib import Path
-from typing import Optional, Union, BinaryIO, Tuple, Dict, Any
+from typing import List, Optional, Tuple, Dict, Any, Union
 
 
 def get_file_extension(filename: str) -> str:

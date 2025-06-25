@@ -135,6 +135,10 @@ def generate(content: str, extensions: List[str], output_dir: Path, prefix: str)
     """Generate files with the given content and extensions."""
     output_dir.mkdir(parents=True, exist_ok=True)
     
+    # Debug output
+    click.echo(f"Requested extensions: {extensions}", err=True)
+    click.echo(f"Supported extensions: {sorted(SUPPORTED_EXTENSIONS)}", err=True)
+    
     # Validate extensions
     invalid_exts = [
         ext for ext in extensions if ext.lower() not in SUPPORTED_EXTENSIONS
@@ -149,7 +153,7 @@ def generate(content: str, extensions: List[str], output_dir: Path, prefix: str)
     generated_files = []
     for ext in extensions:
         try:
-            filepath = generate_file(content, output_dir, prefix, ext)
+            filepath = generate_file(content, ext, output_dir, prefix)
             click.echo(f"Generated: {filepath}")
             generated_files.append(filepath)
         except Exception as e:

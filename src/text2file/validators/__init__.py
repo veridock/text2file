@@ -16,6 +16,7 @@ from .text_validator import (
     CssFileValidator,
     JavaScriptFileValidator,
     PythonFileValidator,
+    ShellScriptValidator,
 )
 
 from .image_validator import (
@@ -67,6 +68,7 @@ __all__ = [
     'CssFileValidator',
     'JavaScriptFileValidator',
     'PythonFileValidator',
+    'ShellScriptValidator',
     
     # Images
     'ImageValidator',

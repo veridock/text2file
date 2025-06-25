@@ -2,8 +2,9 @@
 
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, List, Optional, Union
 
+from ...generators import register_generator
 from ..base import BaseGenerator
 from ...validators.base import ValidationResult
 from ...utils.file_utils import ensure_directory
@@ -131,5 +132,12 @@ class PythonFileGenerator(BaseGenerator):
         return PythonFileValidator.validate(file_path)
 
 
-# Register the generator
-BaseGenerator.register_generator('py', PythonFileGenerator)
+# Register the generator for .py extension
+@register_generator(['py', 'python'])
+def generate_py(content: str, output_path: Union[str, Path], **kwargs: Any) -> Path:
+    """Generate a Python script file with the given content.
+    
+    This is a wrapper around the PythonFileGenerator class to make it work with the
+    registration system.
+    """
+    return PythonFileGenerator.generate(content, output_path, **kwargs)

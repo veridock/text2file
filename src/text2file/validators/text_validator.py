@@ -1,11 +1,13 @@
 """Validators for text-based file formats."""
 
-import json
 import csv
+import json
+import os
 import xml.etree.ElementTree as ET
-import yaml
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
+
+import yaml
 
 from .base import BaseValidator, ValidationResult
 
@@ -239,39 +241,77 @@ class JavaScriptFileValidator(TextFileValidator):
         return super().validate(file_path)
 
 
-class PythonFileValidator(TextFileValidator):
+class PythonFileValidator(BaseValidator):
     """Validator for Python files."""
     
     @classmethod
     def validate(cls, file_path: str) -> ValidationResult:
         """Validate a Python file."""
-        # First validate as text
-        text_result = super().validate(file_path)
-        if not text_result.is_valid:
-            return text_result
-            
-        # Then validate Python syntax
         try:
+            # First validate as a text file
+            text_result = TextFileValidator.validate(file_path)
+            if not text_result.is_valid:
+                return text_result
+                
+            # Try to parse the Python file
             with open(file_path, 'r', encoding='utf-8') as f:
-                compile(f.read(), file_path, 'exec')
+                try:
+                    # Use compile to check syntax without executing
+                    compile(f.read(), file_path, 'exec')
+                except SyntaxError as e:
+                    return ValidationResult(
+                        is_valid=False,
+                        message=f"Invalid Python syntax: {e.msg}",
+                        details={
+                            "line": e.lineno,
+                            "column": e.offset or 0,
+                            "message": e.msg
+                        }
+                    )
+                    
             return ValidationResult(
                 is_valid=True,
-                message="File is valid Python code"
+                message="Valid Python file",
+                details={"lines": sum(1 for _ in open(file_path, 'rb'))}
             )
-        except SyntaxError as e:
-            return ValidationResult(
-                is_valid=False,
-                message=f"Invalid Python syntax: {str(e)}",
-                details={
-                    "error": str(e),
-                    "lineno": e.lineno,
-                    "offset": e.offset,
-                    "text": e.text.strip() if e.text else None
-                }
-            )
+            
         except Exception as e:
             return ValidationResult(
                 is_valid=False,
                 message=f"Error validating Python file: {str(e)}",
+                details={"error": str(e)}
+            )
+
+
+class ShellScriptValidator(BaseValidator):
+    """Validator for shell script files."""
+    
+    @classmethod
+    def validate(cls, file_path: str) -> ValidationResult:
+        """Validate a shell script file."""
+        try:
+            # First validate as a text file
+            text_result = TextFileValidator.validate(file_path)
+            if not text_result.is_valid:
+                return text_result
+                
+            # Check if file is executable (if on Unix-like system)
+            if hasattr(os, 'access') and os.access(file_path, os.X_OK):
+                return ValidationResult(
+                    is_valid=True,
+                    message="Valid shell script (executable)",
+                    details={"executable": True}
+                )
+            else:
+                return ValidationResult(
+                    is_valid=True,
+                    message="Valid shell script (not executable)",
+                    details={"executable": False}
+                )
+                
+        except Exception as e:
+            return ValidationResult(
+                is_valid=False,
+                message=f"Error validating shell script: {str(e)}",
                 details={"error": str(e)}
             )
