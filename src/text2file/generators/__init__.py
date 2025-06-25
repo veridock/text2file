@@ -25,7 +25,10 @@ from .validators import (
 # Re-export registration functions
 register_generator = register_generator
 get_generator = _get_generator
-SUPPORTED_EXTENSIONS = get_supported_extensions()
+
+# Make SUPPORTED_EXTENSIONS a function call to get the latest set of extensions
+def SUPPORTED_EXTENSIONS():
+    return get_supported_extensions()
 
 # Re-export get_validator from validators module
 get_validator = _get_validator
@@ -103,6 +106,10 @@ def generate_file(
 
 # Import and register all generators
 try:
+    # Force reload of supported extensions after all generators are registered
+    def get_supported_extensions_with_reload():
+        return get_supported_extensions()
+    
     # Import text generator first
     from .text import generate_text_file
     

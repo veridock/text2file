@@ -193,27 +193,42 @@ def generate_video_file(
         Path to the generated video file
 
     Raises:
+        ImportError: If required dependencies are not installed
         RuntimeError: If video generation fails
     """
-    # Try using moviepy first (if available)
-    if _generate_video_with_moviepy(content, output_path, duration, fps):
-        return output_path
-
-    # Fall back to ffmpeg if moviepy is not available
-    if _generate_video_with_ffmpeg(content, output_path, duration, fps):
-        return output_path
-
-    # If both methods fail, try to provide helpful error messages
-    try:
-        import moviepy  # noqa: F401
-    except ImportError:
-        raise RuntimeError(
-            "Neither moviepy nor ffmpeg is available for video generation. "
-            "Please install moviepy with: pip install moviepy"
+    if not PILLOW_AVAILABLE:
+        raise ImportError(
+            "Pillow is required for video generation. "
+            "Install with: pip install pillow"
         )
-
-    # If we get here, moviepy is installed but video generation still failed
+        
+    if not NUMPY_AVAILABLE:
+        raise ImportError(
+            "NumPy is required for video generation. "
+            "Install with: pip install numpy"
+        )
+    
+    # Ensure output directory exists
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    # Try moviepy first
+    try:
+        if _generate_video_with_moviepy(content, output_path, duration, fps):
+            return output_path
+    except ImportError as e:
+        print(f"Note: {e}", file=sys.stderr)
+    
+    # Fall back to ffmpeg if moviepy fails or is not available
+    try:
+        if _generate_video_with_ffmpeg(content, output_path, duration, fps):
+            return output_path
+    except Exception as e:
+        print(f"FFmpeg error: {e}", file=sys.stderr)
+    
     raise RuntimeError(
+        "Failed to generate video. Make sure you have either moviepy or ffmpeg installed.\n"
+        "Install with: pip install moviepy numpy pillow\n"
+        "Or install ffmpeg: https://ffmpeg.org/download.html"
         "Video generation failed. Please check that you have ffmpeg installed "
         "and available in your system PATH."
     )
@@ -221,7 +236,7 @@ def generate_video_file(
 
 # Register the video generator if dependencies are available
 if PILLOW_AVAILABLE and NUMPY_AVAILABLE:
-    from ..registration import register_generator_directly
+    from .registration import register_generator_directly
     register_generator_directly(["mp4", "avi", "mov"], generate_video_file)
 elif __name__ == "__main__":
     # Print warnings if running as a script

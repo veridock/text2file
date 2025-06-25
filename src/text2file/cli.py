@@ -133,7 +133,7 @@ def list_extensions() -> None:
     }
     
     # Find any extensions not in the categories
-    all_exts = set(SUPPORTED_EXTENSIONS)
+    all_exts = set(SUPPORTED_EXTENSIONS())
     categorized_exts = set(ext for exts in categories.values() for ext in exts)
     uncategorized = sorted(all_exts - categorized_exts)
     
@@ -149,8 +149,9 @@ def list_extensions() -> None:
         for ext in sorted(exts):
             click.echo(f"  • {ext}")
     
+    supported_exts = SUPPORTED_EXTENSIONS()
     click.echo("\n" + "-" * 50)
-    click.echo(f"Total supported extensions: {len(SUPPORTED_EXTENSIONS)}")
+    click.echo(f"Total supported extensions: {len(supported_exts)}")
     click.echo("=" * 50 + "\n")
     click.echo("Tip: Use 'text2file generate --help' to see how to generate files.")
 
@@ -230,14 +231,17 @@ def generate(
             err=True,
         )
 
+    # Get current supported extensions
+    supported_exts = SUPPORTED_EXTENSIONS()
+    
     # Validate extensions
     invalid_exts = [
-        ext for ext in final_extensions if ext.lower().lstrip(".") not in SUPPORTED_EXTENSIONS
+        ext for ext in final_extensions if ext.lower().lstrip(".") not in supported_exts
     ]
     if invalid_exts:
         raise click.UsageError(
             f"Unsupported extensions: {', '.join(invalid_exts)}. "
-            f"Supported extensions: {', '.join(sorted(SUPPORTED_EXTENSIONS))}"
+            f"Supported extensions: {', '.join(sorted(supported_exts))}"
         )
 
     # Generate files
