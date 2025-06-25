@@ -95,14 +95,27 @@ text2file [COMMAND] [OPTIONS]
 
 #### Generate a text file
 ```bash
+# Short syntax
 text2file "Hello, World!" txt
-```
 
-```bash
+# Long syntax
 text2file generate --content "Hello, World!" --extension txt
+
+# Specify output directory and filename prefix
+text2file generate --content "Hello, World!" --extension txt --output-dir ./output --prefix myfile
 ```
 
-This will create a file named `output.txt` with the content "Hello, World!" in the current directory.
+#### List all supported file formats
+```bash
+text2file list
+```
+
+#### Generate a video file (requires optional dependencies)
+```bash
+text2file generate --content "Sample video content" --extension mp4
+```
+
+This will create a video file with the specified content as text overlay.
 
 #### Generate a set of images from a JSON configuration
 
