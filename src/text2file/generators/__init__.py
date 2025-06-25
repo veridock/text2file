@@ -1,5 +1,8 @@
 """File generators and validators for different file formats."""
 
+import importlib
+import os
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, TypeVar, cast
@@ -44,8 +47,7 @@ __all__ = [
     "validate_file",
     "GeneratorFunc",
     "SUPPORTED_EXTENSIONS",
-    "ImageSetGenerator",
-]
+]  # ImageSetGenerator will be added after import
 
 
 def generate_file(
@@ -93,72 +95,28 @@ def generate_file(
         raise IOError(f"Error generating {extension} file: {str(e)}")
 
 
-# Explicitly import and register the text generator first
+# Import and register all generators
 try:
-    print("Importing text generator...", file=sys.stderr)
+    # Import text generator first
     from .text import generate_text_file
-
-    # Manually register the text generator with all its extensions
     register_generator(["txt", "md", "html", "css", "js", "py", "json", "csv"])(
         generate_text_file
     )
-    print("Successfully registered text generator", file=sys.stderr)
-    print(
-        f"Registered extensions after text: {sorted(SUPPORTED_EXTENSIONS)}",
-        file=sys.stderr,
-    )
+    
+    # Import other generators
+    from .archives import *  # noqa: F401, F403
+    from .image import *  # noqa: F401, F403
+    from .image_set import *  # noqa: F401, F403
+    from .office import *  # noqa: F401, F403
+    from .pdf import *  # noqa: F401, F403
+    from .video import *  # noqa: F401, F403
+    
+    # Import ImageSetGenerator after all other generators
+    from .image_set import ImageSetGenerator
+    
+    # Add ImageSetGenerator to __all__
+    __all__.append("ImageSetGenerator")
+    
 except ImportError as e:
-    print(f"Failed to import text generator: {e}", file=sys.stderr)
+    print(f"Error importing generators: {e}", file=sys.stderr)
     raise
-
-
-def get_generator(extension: str) -> Optional[GeneratorFunc]:
-    """Get the generator function for a file extension.
-
-    Args:
-        extension: File extension (with or without leading dot)
-
-    Returns:
-        Generator function if found, None otherwise
-    """
-    ext = extension.lower().lstrip(".")
-    print(f"Looking up generator for extension: {ext!r}", file=sys.stderr)
-    print(f"Available extensions: {sorted(SUPPORTED_EXTENSIONS)}", file=sys.stderr)
-    generator = _generators.get(ext)
-    print(f"Found generator: {generator is not None}", file=sys.stderr)
-    return generator
-
-
-# Import other generators after defining the registration system
-print("Importing other generators...", file=sys.stderr)
-from .archives import *  # noqa: F401, F403
-from .image import *  # noqa: F401, F403
-from .image_set import *  # noqa: F401, F403
-from .office import *  # noqa: F401, F403
-from .pdf import *  # noqa: F401, F403
-from .text import *  # noqa: F401, F403
-from .video import *  # noqa: F401, F403
-print(f"Final registered generators: {list(_generators.keys())}", file=sys.stderr)
-print(f"Final supported extensions: {sorted(SUPPORTED_EXTENSIONS)}", file=sys.stderr)
-
-# Then import remaining modules
-for module in os.listdir(os.path.dirname(__file__)):
-    if (
-        module.endswith(".py")
-        and not module.startswith("_")
-        and module
-        not in [
-            "text.py",
-            "images.py",
-            "office.py",
-            "archives.py",
-            "pdf.py",
-            "base.py",
-            "validators.py",
-        ]
-    ):
-        module_name = f"{__package__}.{module[:-3]}"
-        try:
-            importlib.import_module(module_name)
-        except ImportError as e:
-            print(f"Warning: Could not import {module_name}: {e}", file=sys.stderr)
