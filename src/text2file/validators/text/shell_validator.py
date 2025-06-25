@@ -1,11 +1,10 @@
 """Validator for shell script files."""
 
-import os
 import re
-import subprocess
 import shutil
+import subprocess
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Optional, Tuple
 
 from ...utils.file_utils import get_file_extension, is_binary_file
 from ..base import BaseValidator, ValidationResult
@@ -33,39 +32,39 @@ class ShellScriptValidator(BaseValidator):
 
     def _parse_shebang(self, content: str) -> Tuple[Optional[str], Optional[str]]:
         """Parse the shebang line from shell script content.
-        
+
         Args:
             content: The shell script content
-            
+
         Returns:
             Tuple of (interpreter, path) if shebang found, (None, None) otherwise
         """
         if not content.startswith('#!'):
             return None, None
-            
+
         shebang_line = content.split('\n', 1)[0].strip()
         parts = shebang_line[2:].strip().split()
-        
+
         if not parts:
             return None, None
-            
+
         interpreter = parts[0]
         path = parts[1] if len(parts) > 1 else None
-        
+
         return interpreter, path
 
     def _run_shellcheck(self, filepath: Path) -> Tuple[bool, str]:
         """Run shellcheck on the shell script.
-        
+
         Args:
             filepath: Path to the shell script
-            
+
         Returns:
             Tuple of (is_valid, message)
         """
         if not shutil.which('shellcheck'):
             return False, "shellcheck is not installed"
-            
+
         try:
             result = subprocess.run(
                 ['shellcheck', str(filepath)],
@@ -73,12 +72,11 @@ class ShellScriptValidator(BaseValidator):
                 text=True,
                 check=False
             )
-            
+
             if result.returncode == 0:
                 return True, "Shellcheck validation passed"
-            else:
-                return False, f"Shellcheck validation failed: {result.stderr}"
-                
+            return False, f"Shellcheck validation failed: {result.stderr}"
+
         except Exception as e:
             return False, f"Error running shellcheck: {str(e)}"
 
@@ -96,7 +94,7 @@ class ShellScriptValidator(BaseValidator):
             file_path: Path to the file to validate
 
         Returns:
-            ValidationResult indicating whether the file is valid
+            ValidationResult object with the validation results
         """
         file_path = Path(file_path)
         details: Dict[str, Any] = {}
@@ -105,79 +103,53 @@ class ShellScriptValidator(BaseValidator):
         if not file_path.exists():
             return ValidationResult(
                 is_valid=False,
-                message=f"File does not exist: {file_path}",
-                details=details,
-            )
-
-        # Check if file is readable
-        if not os.access(file_path, os.R_OK):
-            return ValidationResult(
-                is_valid=False,
-                message=f"File is not readable: {file_path}",
+                message=f"File not found: {file_path}",
                 details=details,
             )
 
         # Check file extension
         ext = get_file_extension(file_path)
         if ext.lower() not in cls.SHELL_EXTENSIONS:
-            details["extension"] = ext
-            details["expected_extensions"] = cls.SHELL_EXTENSIONS
+            details["info"] = f"Extension {ext} not in {cls.SHELL_EXTENSIONS}"
 
         # Check if file is binary
         if is_binary_file(file_path):
             return ValidationResult(
                 is_valid=False,
-                message=f"File appears to be a binary file, not a shell script: {file_path}",
+                message=f"File appears to be binary: {file_path}",
                 details=details,
             )
 
-        # Read first few lines to check for shebang
-        has_shebang = False
+        # Read file content
         try:
-            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-                first_line = f.readline().strip()
-
-                # Check for shebang
-                if first_line.startswith("#!") and any(
-                    first_line.startswith(shebang) for shebang in cls.SHELL_SHEBANGS
-                ):
-                    has_shebang = True
-                    details["shebang"] = first_line
-                else:
-                    # Check if it's a valid shell script without shebang (allowed but not recommended)
-                    details[
-                        "warning"
-                    ] = "No valid shebang found. While shell scripts can run without a shebang, it's recommended to include one."
-
-                # Read more lines to check for common shell script patterns
-                content = first_line + "\n" + f.read(4096)  # Read first 4KB
-
-                # Check for common shell script patterns
-                shell_patterns = [
-                    r"\b(if|then|else|fi|for|do|done|while|until|case|esac|function)\b",
-                    r"\b(echo|printf|read|export|local|declare|typeset|readonly)\b",
-                    r"\$\{[^}]+\}",  # ${variable}
-                    r"\$[a-zA-Z_][a-zA-Z0-9_]*",  # $variable
-                    r"`.*`",  # Command substitution
-                    r"\$\(.*\)",  # $(command substitution)
-                ]
-
-                pattern_matches = 0
-                for pattern in shell_patterns:
-                    if re.search(pattern, content, re.MULTILINE):
-                        pattern_matches += 1
-
-                if (
-                    pattern_matches < 2
-                ):  # Require at least 2 shell patterns to be somewhat confident
-                    details[
-                        "warning"
-                    ] = "File doesn't appear to contain common shell script patterns"
-
-        except (IOError, UnicodeDecodeError) as e:
+            content = file_path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
             return ValidationResult(
                 is_valid=False,
-                message=f"Error reading file {file_path}: {str(e)}",
+                message="File is not a valid UTF-8 text file",
+                details=details,
+            )
+
+        # Check for common shell patterns
+        shell_patterns = [
+            r"\$\{[^}]+\}",  # ${variable}
+            r"\$[a-zA-Z_][a-zA-Z0-9_]*",  # $variable
+            r"`.*`",  # Command substitution
+            r"\$\(.*\)",  # $(command substitution)
+        ]
+
+        pattern_matches = 0
+        for pattern in shell_patterns:
+            if re.search(pattern, content, re.MULTILINE):
+                pattern_matches += 1
+
+        if pattern_matches < 2:  # Require at least 2 shell patterns
+            return ValidationResult(
+                is_valid=False,
+                message=(
+                    f"File does not appear to be a valid shell script "
+                    f"(found only {pattern_matches} shell patterns)"
+                ),
                 details=details,
             )
 

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Get the directory of this script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Change to the project directory
+cd "$SCRIPT_DIR"
+
+# Activate the Poetry environment and run the command
+exec poetry run python -m text2file "$@"

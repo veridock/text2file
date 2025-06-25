@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Get the directory of this script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Change to the project directory
+cd "$SCRIPT_DIR"
+
+# Activate the Poetry environment and run the command
+exec /home/tom/.cache/pypoetry/virtualenvs/text2file-yHb9ZyuH-py3.12/bin/python -m text2file "$@"

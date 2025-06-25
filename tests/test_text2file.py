@@ -2,7 +2,7 @@
 
 import tempfile
 from pathlib import Path
-from unittest import TestCase, skipIf
+from unittest import TestCase
 
 from text2file.generators import SUPPORTED_EXTENSIONS, generate_file
 
