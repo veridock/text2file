@@ -341,6 +341,12 @@ Remove invalid files from a directory.
 - Python 3.8+
 - [Poetry](https://python-poetry.org/)
 
+### Optional Dependencies
+- `Pillow` for image generation
+- `openpyxl` for Excel file generation
+- `python-docx` for Word document generation
+- `PyPDF2` for PDF file generation
+
 ### Setup
 
 1. Clone the repository:
@@ -349,21 +355,36 @@ Remove invalid files from a directory.
    cd text2file
    ```
 
-2. Install dependencies:
+2. Install development dependencies:
    ```bash
-   poetry install
+   # Install Poetry if you haven't already
+   curl -sSL https://install.python-poetry.org | python3 -
+   
+   # Install project with all optional dependencies
+   make install-dev
    ```
 
-3. Activate the virtual environment:
+3. Run tests:
    ```bash
-   poetry shell
+   make test
    ```
 
-### Running Tests
+4. Run linters and formatters:
+   ```bash
+   make lint       # Run all linters
+   make format     # Auto-format code
+   make typecheck  # Run static type checking
+   ```
 
-```bash
-pytest
-```
+5. Install the package in development mode:
+   ```bash
+   pip install -e .
+   ```
+
+6. Run the CLI directly:
+   ```bash
+   python -m text2file --help
+   ```
 
 ### Linting and Formatting
 
@@ -380,11 +401,42 @@ mypy .
 
 ## Contributing
 
-Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md) for details on how to contribute to this project.
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+### Adding New File Formats
+
+To add support for a new file format:
+
+1. Create a new generator function in the appropriate module under `src/text2file/generators/`
+2. Add a validator in `src/text2file/validators/`
+3. Register the generator using the `@register_generator` decorator
+4. Add tests in the `tests/` directory
+5. Update the documentation
+
+## Changelog
+
+### 0.2.0 (Unreleased)
+- Added lazy loading of generators for better performance
+- Added support for video file generation (`.mp4`, `.avi`, `.mov`)
+- Added `text2file list` command to show supported formats
+- Improved error messages for missing dependencies
+- Updated documentation and examples
+
+See [CHANGELOG.md](CHANGELOG.md) for the full changelog.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
+
+---
+
+Created with ❤️ by [Veridock](https://veridock.com)
 
 ## Commands
 

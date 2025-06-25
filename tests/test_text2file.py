@@ -65,6 +65,18 @@ class TestText2File(TestCase):
 
     def test_generate_pdf_file(self):
         """Test generating a PDF file."""
+        # Skip if PDF is not in supported extensions
+        supported = SUPPORTED_EXTENSIONS()
+        if "pdf" not in supported:
+            self.skipTest("PDF generation not supported in this installation")
+        
+        # Check if we can import fpdf2
+        try:
+            import fpdf
+            from fpdf import FPDF, XPos, YPos
+        except ImportError:
+            self.skipTest("fpdf2 is required for PDF generation")
+            
         try:
             output_path = generate_file(
                 self.test_content, "pdf", self.test_dir, "test"
@@ -72,8 +84,10 @@ class TestText2File(TestCase):
             self.assertTrue(output_path.exists())
             self.assertEqual(output_path.suffix, ".pdf")
             self.assertGreater(output_path.stat().st_size, 0)
-        except ImportError:
-            self.skipTest("fpdf2 not installed, skipping PDF test")
+        except Exception as e:
+            if "fpdf2 is required" in str(e):
+                self.skipTest("fpdf2 is required for PDF generation")
+            raise
 
     def test_generate_image_file(self):
         """Test generating an image file."""
