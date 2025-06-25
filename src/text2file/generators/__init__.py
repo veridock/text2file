@@ -1,9 +1,25 @@
-"""File generators for different file formats."""
+"""File generators and validators for different file formats."""
 
 import importlib
 import os
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Set
+"""File generators and validators for different file formats."""
+
+import importlib
+import os
+from pathlib import Path
+from typing import Callable, Dict, List, Set, Type
+
+from .validators import (
+    FileValidator,
+    TextFileValidator,
+    ImageFileValidator,
+    PDFFileValidator,
+    ValidationResult,
+    cleanup_invalid_files,
+    get_validator as _get_validator,
+    validate_file,
+)
 
 # Type variable for generator functions
 GeneratorFunc = Callable[[str, Path, str], Path]
@@ -14,6 +30,26 @@ _generators: Dict[str, GeneratorFunc] = {}
 # Set of supported extensions
 SUPPORTED_EXTENSIONS: Set[str] = set()
 
+# Re-export get_validator from validators module
+get_validator = _get_validator
+
+# Export validation functions and types
+__all__ = [
+    'FileValidator',
+    'TextFileValidator',
+    'ImageFileValidator',
+    'PDFFileValidator',
+    'ValidationResult',
+    'cleanup_invalid_files',
+    'generate_file',
+    'get_generator',
+    'get_validator',
+    'register_generator',
+    'validate_file',
+    'GeneratorFunc',
+    'SUPPORTED_EXTENSIONS',
+]
+
 
 def register_generator(
     extensions: List[str]
@@ -22,7 +58,7 @@ def register_generator(
     
     Args:
         extensions: List of file extensions (without leading dot) that this
-                   generator handles
+            generator handles
     """
     def decorator(func: GeneratorFunc) -> GeneratorFunc:
         for ext in extensions:
