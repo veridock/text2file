@@ -38,8 +38,8 @@ def _parse_config_content(content: str) -> Dict[str, Any]:
     # Clean up the content by normalizing indentation
     lines = content.splitlines()
     if lines:
-        # Remove common indentation
-        content = textwrap.dedent(content)
+        # Remove common indentation while preserving the content structure
+        content = textwrap.dedent(content).strip()
         logging.debug(f"Content after dedent: {content!r}")
     
     # Try parsing as JSON first (most specific check)
@@ -55,21 +55,53 @@ def _parse_config_content(content: str) -> Dict[str, Any]:
     # Try parsing as YAML
     try:
         logging.debug("Trying to parse as YAML")
-        # First try with safe_load
-        result = yaml.safe_load(content)
-        logging.debug(f"Result from yaml.safe_load: {result!r}")
         
-        # If we got None but content isn't empty, try with full_load
-        if result is None and content_stripped:
-            logging.debug("Trying yaml.full_load")
+        # First ensure we have valid YAML content (starts with key: or - or | or >)
+        has_yaml_markers = any(
+            line.strip().startswith((' ', '\t', '-', '|', '>', '#')) or ':' in line
+            for line in content.splitlines()
+            if line.strip()
+        )
+        
+        if not has_yaml_markers:
+            logging.debug("Content doesn't appear to be YAML, skipping")
+            raise ValueError("Content doesn't appear to be YAML")
+            
+        logging.debug("Content appears to be YAML, attempting to parse")
+        
+        # Try multiple approaches to parse YAML
+        # 1. Try with safe_load first
+        try:
+            result = yaml.safe_load(content)
+            logging.debug(f"Result from yaml.safe_load: {result!r}")
+            if result is not None:
+                return result
+        except yaml.YAMLError as e:
+            logging.debug(f"yaml.safe_load failed: {e}")
+        
+        # 2. Try with dedented content if first attempt failed
+        try:
+            dedented = textwrap.dedent(content)
+            logging.debug(f"Trying with dedented content: {dedented!r}")
+            result = yaml.safe_load(dedented)
+            logging.debug(f"Result from yaml.safe_load (dedented): {result!r}")
+            if result is not None:
+                return result
+        except yaml.YAMLError as e:
+            logging.debug(f"yaml.safe_load with dedent failed: {e}")
+        
+        # 3. Try with full_load as last resort
+        try:
             result = yaml.full_load(content)
             logging.debug(f"Result from yaml.full_load: {result!r}")
+            if result is not None:
+                return result
+        except Exception as e:
+            logging.debug(f"yaml.full_load failed: {e}")
             
-        if result is not None:  # Only return if we got a valid result
-            return result
-            
-    except (yaml.YAMLError, AttributeError) as e:
+    except (yaml.YAMLError, AttributeError, ValueError) as e:
         logging.debug(f"YAML parsing error: {e}")
+        logging.debug(f"Content that failed to parse: {content!r}")
     
     # If we get here, try parsing as INI-style
     logging.debug("Falling back to INI parsing")
