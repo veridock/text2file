@@ -7,22 +7,34 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 # Check if Pillow is available
 try:
-    from PIL import Image, ImageDraw, ImageFont
+    from PIL import Image, ImageDraw, ImageFont  # noqa: F401
     PILLOW_AVAILABLE = True
 except ImportError:
     PILLOW_AVAILABLE = False
 
 # Check if NumPy is available
 try:
-    import numpy as np
+    import numpy as np  # type: ignore
     NUMPY_AVAILABLE = True
 except ImportError:
     NUMPY_AVAILABLE = False
+    np = None
 
-from ..generators.registration import register_generator_directly
+# Check if moviepy is available
+try:
+    from moviepy.editor import CompositeVideoClip, ImageClip, TextClip  # type: ignore
+    MOVIEPY_AVAILABLE = True
+except ImportError:
+    MOVIEPY_AVAILABLE = False
+    CompositeVideoClip = ImageClip = TextClip = None
+
+# Conditional import to avoid circular imports
+if TYPE_CHECKING or (PILLOW_AVAILABLE and NUMPY_AVAILABLE):
+    from ..generators.registration import register_generator_directly  # noqa: F401
 
 
 def _create_video_frame(
@@ -88,18 +100,15 @@ def _generate_video_with_ffmpeg(
         # Create a temporary directory for frames
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_dir_path = Path(temp_dir)
-
-            # Generate frames
-            frame_paths = []
+            
+            # Create frames using Pillow
             for i in range(duration * fps):
-                frame_text = f"{text}\n\nFrame {i+1}/{duration * fps}"
-                frame = _create_video_frame(frame_text)
+                frame = _create_video_frame(text)
                 frame_path = temp_dir_path / f"frame_{i:04d}.png"
-                frame.save(frame_path)
-                frame_paths.append(frame_path)
-
-            # Use ffmpeg to create video from frames
-            ffmpeg_cmd = [
+                frame.save(frame_path, "PNG")
+            
+            # Use ffmpeg to create the video
+            cmd = [
                 "ffmpeg",
                 "-y",  # Overwrite output file if it exists
                 "-framerate",
@@ -110,24 +119,15 @@ def _generate_video_with_ffmpeg(
                 "libx264",
                 "-pix_fmt",
                 "yuv420p",
-                "-vf",
-                f"fps={fps}",
                 str(output_path),
             ]
-
-            # Run ffmpeg
-            result = subprocess.run(
-                ffmpeg_cmd, capture_output=True, text=True, check=False
-            )
-
-            if result.returncode != 0:
-                print(f"FFmpeg error: {result.stderr}")
-                return False
-
+            
+            subprocess.run(cmd, check=True, capture_output=True)
             return True
-
-    except Exception as e:
-        print(f"Error generating video: {e}")
+            
+    except (subprocess.CalledProcessError, OSError) as e:
+        print(f"Error generating video with ffmpeg: {e}", 
+              file=sys.stderr)
         return False
 
 
@@ -146,36 +146,45 @@ def _generate_video_with_moviepy(
         bool: True if successful, False otherwise
     """
     try:
-        from moviepy.editor import TextClip
-        from moviepy.video.fx.all import fadein
-
+        from moviepy.editor import (  # type: ignore
+            CompositeVideoClip,
+            ImageClip,
+            TextClip,
+        )
+        
         # Create a text clip
         txt_clip = TextClip(
             text,
-            fontsize=40,
+            fontsize=70,
             color="white",
-            bg_color="black",
             size=(1280, 720),
-            method="caption",
         ).set_duration(duration)
-
-        # Add fade in/out effects
-        txt_clip = fadein(txt_clip, 0.5).crossfadeout(0.5)
-
-        # Set the FPS
-        txt_clip.fps = fps
-
+        
+        # Create a color clip for the background
+        color_clip = ImageClip(
+            _create_video_frame(text).convert("RGB")  # type: ignore
+        ).set_duration(duration)
+        
+        # Overlay the text clip on the color clip
+        video = CompositeVideoClip([color_clip, txt_clip])  # type: ignore
+        
         # Write the video file
-        txt_clip.write_videofile(
-            str(output_path), codec="libx264", audio=False, fps=fps, logger=None
+        video.write_videofile(
+            str(output_path),
+            fps=fps,
+            codec="libx264",
+            audio=False,
         )
-
         return True
-
-    except ImportError:
+        
+    except ImportError as e:
+        print(f"MoviePy not available: {e}", file=sys.stderr)
         return False
     except Exception as e:
-        print(f"Error generating video with moviepy: {e}")
+        print(
+            f"Error generating video with MoviePy: {e}",
+            file=sys.stderr,
+        )
         return False
 
 
@@ -236,12 +245,19 @@ def generate_video_file(
 
 
 # Register the video generator if dependencies are available
-if PILLOW_AVAILABLE and NUMPY_AVAILABLE:  # noqa: F821
-    from .registration import register_generator_directly  # noqa: F811
-    register_generator_directly(["mp4", "avi", "mov"], generate_video_file)
-elif __name__ == "__main__":
-    # Print warnings if running as a script
-    if not PILLOW_AVAILABLE:  # noqa: F821
-        print("Warning: Pillow is not installed. Video generation will not be available.")
-    if not NUMPY_AVAILABLE:  # noqa: F821
-        print("Warning: NumPy is not installed. Video generation will not be available.")
+if PILLOW_AVAILABLE and NUMPY_AVAILABLE:
+    register_generator_directly(  # type: ignore
+        ["mp4", "avi", "mov", "mkv"],
+        generate_video_file,
+        requires=["Pillow", "numpy"],
+        description="Generate video files with text content",
+    )
+else:
+    # Register a placeholder that will raise an informative error
+    register_generator_directly(  # type: ignore
+        ["mp4", "avi", "mov", "mkv"],
+        None,
+        requires=["Pillow", "numpy"],
+        description="Generate video files with text content "
+                   "(requires Pillow and numpy)",
+    )

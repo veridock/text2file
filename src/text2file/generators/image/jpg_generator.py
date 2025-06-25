@@ -5,6 +5,7 @@ from typing import Any, Union
 
 from PIL import Image, ImageDraw  # noqa: F401 - Used indirectly
 
+from ...generators.base import FileGenerator
 from ...generators.registration import register_generator
 from ...utils.file_utils import ensure_directory
 from ...utils.image_utils import (
@@ -54,11 +55,14 @@ def generate_jpg(
             - border: Whether to add a border around the text (default: False)
             - border_color: Border color (name or hex code, default: '#000000')
             - border_width: Border width in pixels (default: 1)
-            - shadow_color: Shadow color (name or hex code with alpha, default: '#00000080')
+            - shadow_color: Shadow color (name or hex code with alpha,
+                default: '#00000080')
             - shadow_offset: (x, y) offset for the shadow (default: (2, 2))
             - line_spacing: Space between lines in pixels (default: 4)
-            - max_width: Maximum width for text wrapping (default: 80% of image width)
-            - auto_resize: Whether to automatically resize the image to fit the text (default: True)
+            - max_width: Maximum width for text wrapping (default: 80% of
+                image width)
+            - auto_resize: Whether to automatically resize the image to fit
+                the text (default: True)
             - dpi: DPI for the image (default: 72)
 
     Returns:
@@ -198,6 +202,12 @@ def generate_jpg(
 
         # Get text dimensions
         text_width, text_height = get_text_dimensions(content, font, max_width)
+        
+        # Initialize width and height if not already set
+        if 'width' not in locals():
+            width = 800  # Default width if not set
+        if 'height' not in locals():
+            height = 600  # Default height if not set
 
         # Adjust image size if auto_resize is True and text doesn't fit
         if auto_resize:
@@ -253,6 +263,26 @@ def generate_jpg(
         )
 
         return output_path
+
+
+class JpgGenerator(FileGenerator):
+    """Generator for JPG image files."""
+
+    @classmethod
+    def generate(
+        cls, content: str, output_path: Path, **kwargs: Any
+    ) -> Path:
+        """Generate a JPG file with the given content.
+
+        Args:
+            content: The text content to include in the image
+            output_path: Path where the JPG file should be saved
+            **kwargs: Additional keyword arguments (see generate_jpg for details)
+
+        Returns:
+            Path to the generated JPG file
+        """
+        return generate_jpg(content, output_path, **kwargs)
 
     @classmethod
     def validate(cls, file_path: Union[str, Path]) -> 'ValidationResult':
