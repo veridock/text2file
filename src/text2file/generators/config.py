@@ -141,10 +141,25 @@ class ConfigGenerator(BaseGenerator):
     def generate(
         cls,
         content: str,
-        output_path: Path,
-        format: str = "yaml",
+        output_path: Union[str, Path],
         **kwargs: Any
     ) -> Path:
+        """Generate a configuration file.
+        
+        Args:
+            content: Configuration content (JSON, YAML, or INI format)
+            output_path: Path to write the configuration file to
+            **kwargs: Additional keyword arguments including:
+                format: Output format (yaml, toml, ini, json). Defaults to 'yaml'.
+                
+        Returns:
+            Path to the generated file
+            
+        Raises:
+            ValueError: If the format is not supported
+        """
+        format = kwargs.get('format', 'yaml').lower()
+        output_path = Path(output_path)
         """Generate a configuration file.
         
         Args:
@@ -190,11 +205,23 @@ class ConfigGenerator(BaseGenerator):
 
 
 # Register the generator for different config file formats
-register_generator_directly(["yaml", "yml"], 
-    lambda content, path, **kw: ConfigGenerator.generate(content, path, format="yaml", **kw))
-    
-register_generator_directly(["toml"], 
-    lambda content, path, **kw: ConfigGenerator.generate(content, path, format="toml", **kw))
-    
-register_generator_directly(["ini", "cfg", "conf"], 
-    lambda content, path, **kw: ConfigGenerator.generate(content, path, format="ini", **kw))
+register_generator_directly(
+    ["yaml", "yml"],
+    lambda content, path, **kw: ConfigGenerator.generate(content, path, format="yaml", **kw)
+)
+
+register_generator_directly(
+    ["toml"],
+    lambda content, path, **kw: ConfigGenerator.generate(content, path, format="toml", **kw)
+)
+
+register_generator_directly(
+    ["ini", "cfg", "conf"],
+    lambda content, path, **kw: ConfigGenerator.generate(content, path, format="ini", **kw)
+)
+
+# Also register JSON since we support it as an output format
+register_generator_directly(
+    ["json"],
+    lambda content, path, **kw: ConfigGenerator.generate(content, path, format="json", **kw)
+)

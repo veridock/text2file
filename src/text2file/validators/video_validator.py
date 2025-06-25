@@ -64,7 +64,8 @@ class VideoValidator(BaseValidator):
                 return ValidationResult(
                     is_valid=False,
                     message=(
-                        f"Expected .{cls.FORMAT} file, got {Path(file_path).suffix}"
+                        f"Expected .{cls.FORMAT} file, got "
+                        f"{Path(file_path).suffix}"
                     )
                 )
 
@@ -90,7 +91,10 @@ class VideoValidator(BaseValidator):
             # If we get here, we couldn't validate the video
             return ValidationResult(
                 is_valid=False,
-                message="Could not validate video (missing dependencies: install OpenCV or ffmpeg)",
+                message=(
+                    "Could not validate video (missing dependencies: "
+                    "install OpenCV or ffmpeg)"
+                ),
                 details={
                     "opencv_available": HAS_OPENCV,
                     "ffprobe_available": HAS_FFPROBE,
@@ -173,10 +177,10 @@ class VideoValidator(BaseValidator):
     @classmethod
     def _validate_with_ffprobe(cls, file_path: str) -> ValidationResult:
         """Validate video file using ffprobe.
-        
+
         Args:
             file_path: Path to the video file
-            
+
         Returns:
             ValidationResult indicating if the video is valid
         """
@@ -189,14 +193,14 @@ class VideoValidator(BaseValidator):
         try:
             # Run ffprobe to get video information
             result = subprocess.run(
-                [
-                    "ffprobe",
-                    "-v", "error",
-                    "-select_streams", "v:0",
-                    "-show_entries", "stream=codec_name,width,height,"
-                                    "r_frame_rate,duration,nb_frames",
-                    "-show_entries", "format=format_name,duration,size",
-                    "-of", "json",
+                command=[
+                    'ffprobe',
+                    '-v', 'error',
+                    '-select_streams', 'v:0',
+                    '-show_entries',
+                    'stream=codec_name,width,height,r_frame_rate,duration,nb_frames',
+                    '-show_entries', 'format=format_name,duration,size',
+                    '-of', 'json',
                     file_path
                 ],
                 stdout=subprocess.PIPE,
