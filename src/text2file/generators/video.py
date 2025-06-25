@@ -3,7 +3,6 @@
 This module provides functions to generate video files with text content.
 It supports multiple video formats and can use either ffmpeg or moviepy as the backend.
 """
-
 """Video file generation functionality.
 
 This module provides functions to generate video files with text content.
@@ -14,7 +13,15 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import TYPE_CHECKING, Union, cast, Any
+from typing import TYPE_CHECKING, Any, Union, cast
+
+# Only import these when type checking to avoid circular imports
+if TYPE_CHECKING:
+    from PIL import Image, ImageDraw, ImageFont  # noqa: F401
+    from PIL.ImageFont import FreeTypeFont  # noqa: F401
+    from moviepy.editor import CompositeVideoClip, ImageClip, TextClip  # noqa: F401
+    from numpy import ndarray  # noqa: F401
+    from ..registration import register_generator  # noqa: F401
 
 # Third-party imports (make optional with try/except)
 try:
@@ -40,6 +47,10 @@ try:
 except ImportError:
     MOVIEPY_AVAILABLE = False
     CompositeVideoClip = ImageClip = TextClip = None  # type: ignore
+    
+    # Define types for static type checkers
+    if TYPE_CHECKING:
+        CompositeVideoClip = ImageClip = TextClip = Any  # type: ignore
     
 # Check if NumPy is available
 try:
@@ -70,7 +81,7 @@ def _create_video_frame(
     bg_color: str = "#000000",
     text_color: str = "#FFFFFF",
     font_size: int = 24,
-) -> Image.Image:
+) -> 'Image.Image':
     """Create a video frame with centered text.
     
     Args:
