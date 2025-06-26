@@ -197,7 +197,61 @@ Options:
 - `--fg, --text-color`: Text color for placeholders (default: "#000000")
 
 #### Generate an Excel (.xlsx) file
+
+Generate Excel spreadsheets with support for:
+- Multiple worksheets
+- Auto-adjusted column widths
+- Custom sheet names
+- CSV-like data input
+
 ```bash
+# Basic usage with CSV-like content
+content="Name,Age,City\nJohn,30,New York\nAlice,25,London"
+text2file generate --content "$content" --extension xlsx
+
+# Custom sheet name
+text2file generate --content "$content" --extension xlsx --sheet-name "Users"
+
+# Disable auto-adjust column widths
+text2file generate --content "$content" --extension xlsx --no-auto-adjust
+```
+
+**Options:**
+- `--sheet-name`: Custom worksheet name (default: "Sheet1")
+- `--no-auto-adjust`: Disable auto-adjustment of column widths (enabled by default)
+
+The input content should be in CSV format where:
+- Rows are separated by newlines (`\n`)
+- Cells within a row are separated by commas (`,`)
+- The first row is treated as headers if present
+
+Example with multiple data types:
+```bash
+content="Name,Age,Salary,HireDate\nJohn Doe,35,75000,2020-05-15\nJane Smith,28,85000,2021-03-22"
+text2file generate --content "$content" --extension xlsx --sheet-name "Employees"
+```
+
+This will create an Excel file with properly formatted cells, including:
+- Text alignment
+- Number formatting
+- Date recognition
+- Auto-adjusted column widths
+
+For more complex spreadsheets, you can generate the XLSX file programmatically using the Python API:
+
+```python
+from text2file import generate_file
+
+# Generate with custom options
+generate_file(
+    content="Product,Price,Stock\nLaptop,999,15\nMouse,25,100",
+    extension="xlsx",
+    output_dir="./reports",
+    prefix="inventory",
+    sheet_name="Products",
+    auto_adjust=True
+)
+```
 # Basic Excel file from CSV-like content
 content="Name,Age,City\nJohn,30,New York\nAlice,25,London"
 text2file generate --content "$content" --extension xlsx
