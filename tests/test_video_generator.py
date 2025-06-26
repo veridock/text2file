@@ -141,6 +141,13 @@ def test_generate_video_with_moviepy(
     """Test generating videos with moviepy using different parameters."""
     if not MOVIEPY_AVAILABLE:
         pytest.skip("moviepy is not available")
+            
+    print("\n=== TEST SETUP ===")
+    print(f"Mock TextClip: {mock_text_cls}")
+    print(f"Mock ImageClip: {mock_image_cls}")
+    print(f"Mock CompositeVideoClip: {mock_composite_cls}")
+    print(f"Mock ColorClip: {mock_color_cls}")
+    print(f"Mock _create_video_frame: {mock_create_frame}")
 
     output_path = tmp_path / f"test_moviepy_{duration}s_{fps}fps.mp4"
 
@@ -177,6 +184,29 @@ def test_generate_video_with_moviepy(
     mock_color_clip.set_duration.return_value = mock_color_clip
     # Mock the ColorClip class to return our mock instance
     mock_color_cls.return_value = mock_color_clip
+    print(f"\n=== MOCK COLOR CLIP SETUP ===")
+    print(f"Mock ColorClip class: {mock_color_cls}")
+    print(f"Mock ColorClip instance: {mock_color_clip}")
+    print(f"Mock ColorClip size: {mock_color_clip.size}")
+        
+    # Debug: Print the actual ColorClip class being used by CompositeVideoClip
+    from moviepy.video.compositing import CompositeVideoClip
+    from moviepy.video.VideoClip import ColorClip
+    print(f"\n=== ACTUAL IMPORTS ===")
+    print(f"Actual CompositeVideoClip: {CompositeVideoClip}")
+    print(f"Actual ColorClip: {ColorClip}")
+    print(f"Is ColorClip patched? {ColorClip is mock_color_cls}")
+        
+    # Add a side effect to the mock to see when it's called
+    def color_clip_side_effect(*args, **kwargs):
+        print("\n=== COLOR CLIP CREATED ===")
+        print(f"Args: {args}")
+        print(f"Kwargs: {kwargs}")
+        mock_color_clip._args = args
+        mock_color_clip._kwargs = kwargs
+        return mock_color_clip
+            
+    mock_color_cls.side_effect = color_clip_side_effect
 
     # Create a custom mock class for CompositeVideoClip
     class MockCompositeVideoClip:
@@ -190,7 +220,7 @@ def test_generate_video_with_moviepy(
             self.bg.get_frame.return_value = None
             self.bg.close.return_value = None
             self.created_bg = True
-            self.duration = max((getattr(c, 'duration', 0) for c in clips), default=10)
+            self.duration = max((getattr(c, "duration", 0) for c in clips), default=10)
             self.fps = 24
 
         def __enter__(self):
@@ -237,9 +267,15 @@ def test_generate_video_with_moviepy(
     mock_image_clip.close.return_value = None
 
     # Call with test parameters
-    result = _generate_video_with_moviepy(
-        text=TEST_VIDEO_TEXT, output_path=output_path, duration=duration, fps=fps
-    )
+    print("\n=== CALLING _generate_video_with_moviepy ===")
+    try:
+        result = _generate_video_with_moviepy(
+            text=TEST_VIDEO_TEXT, output_path=output_path, duration=duration, fps=fps
+        )
+        print(f"Result: {result}")
+    except Exception as e:
+        print(f"Exception: {e}")
+        raise
 
     # Verify the function returns True on success
     assert result is True
