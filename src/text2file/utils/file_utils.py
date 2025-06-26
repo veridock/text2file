@@ -23,9 +23,7 @@ def get_file_extension(filename: str) -> str:
     return Path(filename).suffix.lstrip(".").lower()
 
 
-def get_mime_type(
-    file_path: Union[str, Path]
-) -> Tuple[Optional[str], Optional[str]]:
+def get_mime_type(file_path: Union[str, Path]) -> Tuple[Optional[str], Optional[str]]:
     """Get the MIME type of a file.
 
     Args:
@@ -37,10 +35,7 @@ def get_mime_type(
     return mimetypes.guess_type(str(file_path))
 
 
-def is_binary_file(
-    file_path: Union[str, Path],
-    chunk_size: int = 1024
-) -> bool:
+def is_binary_file(file_path: Union[str, Path], chunk_size: int = 1024) -> bool:
     """Check if a file is binary.
 
     Args:
@@ -61,8 +56,7 @@ def is_binary_file(
         # Documents
         *"pdf doc docx xls xlsx ppt pptx odt ods odp".split(),
         # Audio/Video
-        *"mp3 wav ogg flac aac wma m4a mp4 avi mkv mov wmv flv webm m4v 3gp"
-        .split(),
+        *"mp3 wav ogg flac aac wma m4a mp4 avi mkv mov wmv flv webm m4v 3gp".split(),
         "mpg",
         "mpeg",
         "m2ts",
@@ -298,18 +292,18 @@ def get_file_info(file_path: Union[str, Path]) -> Dict[str, Any]:
 
 def _format_size(size: int, decimals: int = 2) -> str:
     """Format a size in bytes to a human-readable string.
-    
+
     Args:
         size: Size in bytes
         decimals: Number of decimal places
-        
+
     Returns:
         Formatted size string with unit
     """
-    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
         if size < 1024.0:
             break
-        if unit != 'TB':  # Don't divide beyond TB
+        if unit != "TB":  # Don't divide beyond TB
             size /= 1024.0
     return f"{size:.{decimals}f} {unit}"
 
@@ -372,12 +366,12 @@ def sanitize_filename(filename: str, replace_with: str = "_") -> str:
     """
 
     # Normalize unicode characters
-    normalized = unicodedata.normalize('NFKD', str(filename))
-    ascii_str = normalized.encode('ascii', 'ignore').decode('ascii')
+    normalized = unicodedata.normalize("NFKD", str(filename))
+    ascii_str = normalized.encode("ascii", "ignore").decode("ascii")
 
     # Replace invalid characters and whitespace
-    no_special = re.sub(r'[^\w\s-]', replace_with, ascii_str)
-    no_whitespace = re.sub(r'[\s]+', replace_with, no_special)
+    no_special = re.sub(r"[^\w\s-]", replace_with, ascii_str)
+    no_whitespace = re.sub(r"[\s]+", replace_with, no_special)
     stripped = no_whitespace.strip(replace_with)
 
     # Handle empty result
@@ -388,7 +382,7 @@ def sanitize_filename(filename: str, replace_with: str = "_") -> str:
     max_len = 255
     if len(stripped) > max_len:
         name, ext = os.path.splitext(stripped)
-        ext = ext[:max(0, max_len - len(name) - 1)]
-        stripped = name[:max(0, max_len - len(ext) - 1)] + ext
+        ext = ext[: max(0, max_len - len(name) - 1)]
+        stripped = name[: max(0, max_len - len(ext) - 1)] + ext
 
     return stripped

@@ -43,9 +43,7 @@ class ArchiveValidator(BaseValidator):
             if cls.FORMAT and not cls._matches_format(path, cls.FORMAT):
                 return ValidationResult(
                     is_valid=False,
-                    message=(
-                        f"Expected {cls.FORMAT.upper()} file, got {path.suffix}"
-                    ),
+                    message=(f"Expected {cls.FORMAT.upper()} file, got {path.suffix}"),
                 )
 
             # Delegate to format-specific validation
@@ -62,15 +60,9 @@ class ArchiveValidator(BaseValidator):
     def _matches_format(cls, path: Path, format_str: str) -> bool:
         """Check if the file extension matches the expected format."""
         if format_str == "tar.gz":
-            return (
-                path.suffixes == [".tar", ".gz"] or 
-                path.suffix == ".tgz"
-            )
+            return path.suffixes == [".tar", ".gz"] or path.suffix == ".tgz"
         if format_str == "tar.bz2":
-            return (
-                path.suffixes == [".tar", ".bz2"] or 
-                path.suffix == ".tbz2"
-            )
+            return path.suffixes == [".tar", ".bz2"] or path.suffix == ".tbz2"
         return path.suffix.lower() == f".{format_str}"
 
     @classmethod
@@ -126,21 +118,21 @@ class ZipValidator(ArchiveValidator):
     @classmethod
     def _get_archive_contents(cls, file_path: str) -> List[Dict[str, Any]]:
         """Get a list of files in the ZIP archive with their details.
-        
+
         Args:
             file_path: Path to the archive file
-            
+
         Returns:
             List of dictionaries containing file information
         """
-        with zipfile.ZipFile(file_path, 'r') as zip_ref:
+        with zipfile.ZipFile(file_path, "r") as zip_ref:
             return [
                 {
-                    'filename': info.filename,
-                    'file_size': info.file_size,
-                    'compress_size': info.compress_size,
-                    'is_dir': info.is_dir(),
-                    'modified': info.date_time,
+                    "filename": info.filename,
+                    "file_size": info.file_size,
+                    "compress_size": info.compress_size,
+                    "is_dir": info.is_dir(),
+                    "modified": info.date_time,
                 }
                 for info in zip_ref.infolist()
             ]

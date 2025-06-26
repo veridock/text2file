@@ -42,9 +42,7 @@ class ImageValidator(BaseValidator):
             if cls.FORMAT and path.suffix.lower()[1:] != cls.FORMAT.lower():
                 return ValidationResult(
                     is_valid=False,
-message=(
-                        f"Expected {cls.FORMAT.upper()} file, got {path.suffix}"
-                    ),
+                    message=(f"Expected {cls.FORMAT.upper()} file, got {path.suffix}"),
                 )
 
             # Check file magic number to verify the actual format
@@ -57,7 +55,7 @@ message=(
             if cls.FORMAT and detected_format.lower() != cls.FORMAT.lower():
                 return ValidationResult(
                     is_valid=False,
-message=(
+                    message=(
                         f"File is not a {cls.FORMAT.upper()} image "
                         f"(detected as {detected_format.upper()})"
                     ),
@@ -77,9 +75,7 @@ message=(
                             details={"width": width, "height": height},
                         )
 
-                    return ValidationResult(
-                        is_valid=True, message="Valid image file"
-                    )
+                    return ValidationResult(is_valid=True, message="Valid image file")
             except UnidentifiedImageError as e:
                 return ValidationResult(
                     is_valid=False,

@@ -44,11 +44,7 @@ class XLSXGenerator(BaseGenerator):
             # Write data to the worksheet
             for row_idx, row in enumerate(rows, 1):
                 for col_idx, value in enumerate(row, 1):
-                    worksheet.cell(
-                        row=row_idx,
-                        column=col_idx,
-                        value=value.strip()
-                    )
+                    worksheet.cell(row=row_idx, column=col_idx, value=value.strip())
 
             # Auto-adjust column widths if requested
             if kwargs.get("auto_adjust", True):

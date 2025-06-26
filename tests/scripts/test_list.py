@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.text2file.generators import SUPPORTED_EXTENSIONS
 
+
 def main():
     """Print all supported file extensions, one per line."""
     # Call the SUPPORTED_EXTENSIONS function to get the set of extensions
@@ -16,6 +17,7 @@ def main():
     print("Supported extensions:")
     for ext in sorted(extensions):
         print(f"- .{ext}")
+
 
 if __name__ == "__main__":
     main()

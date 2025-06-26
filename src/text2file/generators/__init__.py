@@ -23,6 +23,7 @@ from .validators import validate_file
 register_generator = register_generator
 get_generator = _get_generator
 
+
 # Make SUPPORTED_EXTENSIONS a function call to get the latest set of extensions
 def SUPPORTED_EXTENSIONS():
     return get_supported_extensions()
@@ -132,10 +133,10 @@ try:
     from .pdf import generate_pdf_file
 
     register_generator(["pdf"])(generate_pdf_file)
-    
+
     # Import and register config generator
     from .config import ConfigGenerator
-    
+
     # Note: ConfigGenerator is registered directly in the config.py module: F401, F403
     from .image import *  # noqa: F401, F403
 
@@ -143,13 +144,16 @@ try:
     from .image_set import ImageSetGenerator  # noqa: F401
     from .office import *  # noqa: F401, F403
     from .video import *  # noqa: F401, F403
-    
+
     # Import and register Excel generator
     try:
         from .excel import register as register_excel_generator
+
         register_excel_generator()
     except ImportError as e:
-        print(f"Warning: Excel generation not available: {e}", file=sys.stderr)  # noqa: T201
+        print(
+            f"Warning: Excel generation not available: {e}", file=sys.stderr
+        )  # noqa: T201
 
     # Add ImageSetGenerator to __all__
     __all__.append("ImageSetGenerator")

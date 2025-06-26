@@ -11,10 +11,7 @@ from .file_utils import ensure_directory
 
 
 def create_blank_image(
-    width: int = 800,
-    height: int = 600,
-    color: str = "#FFFFFF",
-    mode: str = "RGB"
+    width: int = 800, height: int = 600, color: str = "#FFFFFF", mode: str = "RGB"
 ) -> Image.Image:
     """Create a new blank image.
 
@@ -42,8 +39,7 @@ def create_blank_image(
 
 
 def load_font(
-    font_path: Optional[str] = None,
-    font_size: int = 12
+    font_path: Optional[str] = None, font_size: int = 12
 ) -> ImageFont.FreeTypeFont:
     """Load a font with fallback to default system font.
 
@@ -568,9 +564,7 @@ def resize_image(
 
 
 def apply_filter(
-    image: Image.Image,
-    filter_name: str,
-    **kwargs
+    image: Image.Image, filter_name: str, **kwargs
 ) -> Optional[Image.Image]:
     """Apply a filter to an image.
 

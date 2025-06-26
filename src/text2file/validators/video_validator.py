@@ -14,6 +14,7 @@ from .base import BaseValidator, ValidationResult
 HAS_OPENCV = False
 try:
     import cv2  # noqa: F811
+
     HAS_OPENCV = True
 except ImportError:
     pass
@@ -24,7 +25,8 @@ HAS_FFPROBE = bool(
         ["which", "ffprobe"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-    ).returncode == 0
+    ).returncode
+    == 0
 )
 
 
@@ -49,14 +51,12 @@ class VideoValidator(BaseValidator):
             path = Path(file_path)
             if not path.exists():
                 return ValidationResult(
-                    is_valid=False,
-                    message=f"File not found: {file_path}"
+                    is_valid=False, message=f"File not found: {file_path}"
                 )
 
             if not path.is_file():
                 return ValidationResult(
-                    is_valid=False,
-                    message=f"Not a file: {file_path}"
+                    is_valid=False, message=f"Not a file: {file_path}"
                 )
 
             # Check file extension against expected format
@@ -64,17 +64,13 @@ class VideoValidator(BaseValidator):
                 return ValidationResult(
                     is_valid=False,
                     message=(
-                        f"Expected .{cls.FORMAT} file, got "
-                        f"{Path(file_path).suffix}"
-                    )
+                        f"Expected .{cls.FORMAT} file, got " f"{Path(file_path).suffix}"
+                    ),
                 )
 
             # If all else fails, check if the file is not empty
             if path.stat().st_size == 0:
-                return ValidationResult(
-                    is_valid=False,
-                    message="File is empty"
-                )
+                return ValidationResult(is_valid=False, message="File is empty")
 
             # Try to validate with OpenCV first
             if HAS_OPENCV:
@@ -113,17 +109,13 @@ class VideoValidator(BaseValidator):
     def _validate_with_opencv(cls, file_path: str) -> ValidationResult:
         """Validate a video file using OpenCV."""
         if not HAS_OPENCV:
-            return ValidationResult(
-                is_valid=False,
-                message="OpenCV is not available"
-            )
+            return ValidationResult(is_valid=False, message="OpenCV is not available")
 
         try:
             # Check file readability first
             if not os.access(file_path, os.R_OK):
                 return ValidationResult(
-                    is_valid=False,
-                    message=f"File not readable: {file_path}"
+                    is_valid=False, message=f"File not readable: {file_path}"
                 )
 
             # Open the video file
@@ -185,28 +177,29 @@ class VideoValidator(BaseValidator):
             ValidationResult indicating if the video is valid
         """
         if not HAS_FFPROBE:
-            return ValidationResult(
-                is_valid=False,
-                message="ffprobe is not available"
-            )
-            
+            return ValidationResult(is_valid=False, message="ffprobe is not available")
+
         try:
             # Run ffprobe to get video information
             result = subprocess.run(
                 command=[
-                    'ffprobe',
-                    '-v', 'error',
-                    '-select_streams', 'v:0',
-                    '-show_entries',
-                    'stream=codec_name,width,height,r_frame_rate,duration,nb_frames',
-                    '-show_entries', 'format=format_name,duration,size',
-                    '-of', 'json',
-                    file_path
+                    "ffprobe",
+                    "-v",
+                    "error",
+                    "-select_streams",
+                    "v:0",
+                    "-show_entries",
+                    "stream=codec_name,width,height,r_frame_rate,duration,nb_frames",
+                    "-show_entries",
+                    "format=format_name,duration,size",
+                    "-of",
+                    "json",
+                    file_path,
                 ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                check=True
+                check=True,
             )
 
             # Parse the JSON output
@@ -214,33 +207,28 @@ class VideoValidator(BaseValidator):
                 info = json.loads(result.stdout)
                 if not info:
                     return ValidationResult(
-                        is_valid=False,
-                        message="No video information found"
+                        is_valid=False, message="No video information found"
                     )
-                
+
                 # Check if we have at least one video stream
-                if 'streams' not in info or not info['streams']:
+                if "streams" not in info or not info["streams"]:
                     return ValidationResult(
-                        is_valid=False,
-                        message="No video streams found"
+                        is_valid=False, message="No video streams found"
                     )
-                
-                format_name = info.get('format', {}).get('format_name', 'unknown')
+
+                format_name = info.get("format", {}).get("format_name", "unknown")
                 return ValidationResult(
-                    is_valid=True,
-                    message=f"Video is valid: {format_name}"
+                    is_valid=True, message=f"Video is valid: {format_name}"
                 )
 
             except json.JSONDecodeError:
                 return ValidationResult(
-                    is_valid=False,
-                    message="Invalid JSON output from ffprobe"
+                    is_valid=False, message="Invalid JSON output from ffprobe"
                 )
 
             # If we get here, something went wrong
             return ValidationResult(
-                is_valid=False,
-                message="Unknown validation error occurred"
+                is_valid=False, message="Unknown validation error occurred"
             )
 
         except Exception as e:

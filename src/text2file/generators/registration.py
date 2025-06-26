@@ -50,6 +50,7 @@ class GeneratorRegistry:
 # Create a singleton instance of the registry
 _registry = GeneratorRegistry()
 
+
 # Public API functions
 def register_generator(
     extensions: List[str],

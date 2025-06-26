@@ -59,7 +59,9 @@ class TestConfigGenerator(unittest.TestCase):
           enabled: true
         """
         result = _parse_config_content(content)
-        self.assertEqual(result, {"key": "value", "nested": {"num": 42, "enabled": True}})
+        self.assertEqual(
+            result, {"key": "value", "nested": {"num": 42, "enabled": True}}
+        )
 
     def test_parse_ini_content(self):
         """Test parsing INI-style config content."""
@@ -110,9 +112,9 @@ class TestConfigGenerator(unittest.TestCase):
         )
         self.assertTrue(result_path.exists())
         self.assertEqual(result_path.suffix, ".yaml")
-        
+
         # Verify the content
-        with open(result_path, 'r') as f:
+        with open(result_path, "r") as f:
             content = yaml.safe_load(f)
         self.assertEqual(content["database"]["name"], "testdb")
 
@@ -123,9 +125,9 @@ class TestConfigGenerator(unittest.TestCase):
             self.test_config_str, output_path, format="toml"
         )
         self.assertTrue(result_path.exists())
-        
+
         # Verify the content
-        with open(result_path, 'rb') as f:
+        with open(result_path, "rb") as f:
             content = toml.load(f)
         self.assertEqual(content["database"]["port"], 5432)
 
@@ -136,9 +138,9 @@ class TestConfigGenerator(unittest.TestCase):
             self.test_config_str, output_path, format="ini"
         )
         self.assertTrue(result_path.exists())
-        
+
         # Simple check since INI is lossy
-        with open(result_path, 'r') as f:
+        with open(result_path, "r") as f:
             content = f.read()
         self.assertIn("[database]", content)
         self.assertIn("port = 5432", content)
@@ -147,9 +149,7 @@ class TestConfigGenerator(unittest.TestCase):
         """Test that an unsupported format raises an error."""
         with self.assertRaises(ValueError):
             ConfigGenerator.generate(
-                self.test_config_str, 
-                self.test_dir / "config.xyz", 
-                format="xyz"
+                self.test_config_str, self.test_dir / "config.xyz", format="xyz"
             )
 
 

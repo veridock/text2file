@@ -33,10 +33,7 @@ class PdfValidator(BaseValidator):
             path = Path(file_path)
             if not path.exists():
                 return ValidationResult(
-                    is_valid=False,
-                    message=(
-                        f"File not found: {file_path}"
-                    )
+                    is_valid=False, message=(f"File not found: {file_path}")
                 )
 
             if not path.is_file():
@@ -134,9 +131,7 @@ class PdfValidator(BaseValidator):
                 dimensions = ""
                 if hasattr(pdf_reader.pages[0], "mediaBox"):
                     media_box = pdf_reader.pages[0].mediaBox
-                    dimensions = (
-                        f"{media_box.width:.1f}x{media_box.height:.1f} points"
-                    )
+                    dimensions = f"{media_box.width:.1f}x{media_box.height:.1f} points"
 
                 metadata = {
                     "size": Path(file_path).stat().st_size,
@@ -149,10 +144,7 @@ class PdfValidator(BaseValidator):
 
                 return ValidationResult(
                     is_valid=True,
-                    message=(
-                        f"Valid PDF with {num_pages} pages "
-                        f"({dimensions})"
-                    ),
+                    message=(f"Valid PDF with {num_pages} pages " f"({dimensions})"),
                     details=metadata,
                 )
 
@@ -192,9 +184,7 @@ class PdfValidator(BaseValidator):
         return result
 
     @classmethod
-    def get_page_count(
-        cls, file_path: str
-    ) -> Tuple[bool, int, str]:
+    def get_page_count(cls, file_path: str) -> Tuple[bool, int, str]:
         """Get the number of pages in a PDF file.
 
         Args:
@@ -218,9 +208,7 @@ class PdfValidator(BaseValidator):
             return False, 0, f"Error getting page count: {str(e)}"
 
     @classmethod
-    def is_encrypted(
-        cls, file_path: str
-    ) -> Tuple[bool, bool, str]:
+    def is_encrypted(cls, file_path: str) -> Tuple[bool, bool, str]:
         """Check if a PDF file is encrypted.
 
         Args:

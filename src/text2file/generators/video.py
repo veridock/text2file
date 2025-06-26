@@ -43,24 +43,28 @@ register_generator: Any = None  # type: ignore
 try:
     from PIL import Image, ImageDraw, ImageFont  # type: ignore
     from PIL.ImageFont import FreeTypeFont  # type: ignore
+
     PILLOW_AVAILABLE = True
 except ImportError:
     PILLOW_AVAILABLE = False
 
 try:
     import numpy as np  # type: ignore
+
     NUMPY_AVAILABLE = True
 except ImportError:
     NUMPY_AVAILABLE = False
 
 try:
     from moviepy.editor import TextClip, CompositeVideoClip, ImageClip  # type: ignore
+
     MOVIEPY_AVAILABLE = True
 except ImportError:
     MOVIEPY_AVAILABLE = False
 
 try:
     from ..registration import register_generator  # type: ignore
+
     REGISTRATION_AVAILABLE = True
 except ImportError:
     REGISTRATION_AVAILABLE = False
@@ -75,7 +79,7 @@ def _create_video_frame(
     font_size: int = 24,
 ) -> Any:  # Return type should be PIL.Image.Image but we use Any for optional deps
     """Create a video frame with centered text.
-    
+
     Args:
         text: The text to display on the frame
         width: Frame width in pixels
@@ -83,7 +87,7 @@ def _create_video_frame(
         bg_color: Background color as hex string
         text_color: Text color as hex string
         font_size: Font size in points
-        
+
     Returns:
         PIL Image object with the rendered frame
     """
@@ -96,33 +100,31 @@ def _create_video_frame(
             "Note: ffmpeg must be installed separately on your system.\n"
             "See https://ffmpeg.org/ for installation instructions."
         )
-    
+
     # Create a new image with the specified background color
     image = Image.new("RGB", (width, height), bg_color)
     draw = ImageDraw.Draw(image)
-    
+
     # Try to load a nice font, fall back to default
     font = ImageFont.load_default()
     try:
         font = ImageFont.truetype("Arial.ttf", font_size)
     except (IOError, OSError):
         try:
-            font = ImageFont.truetype(
-                "LiberationSans-Regular.ttf", font_size
-            )
+            font = ImageFont.truetype("LiberationSans-Regular.ttf", font_size)
         except (IOError, OSError):
             pass  # Use default font
-    
+
     # Calculate text position (centered)
     if font is not None:
         text_bbox = draw.textbbox((0, 0), text, font=font)
         text_width = text_bbox[2] - text_bbox[0]
         text_height = text_bbox[3] - text_bbox[1]
         position = ((width - text_width) // 2, (height - text_height) // 2)
-        
+
         # Draw the text
         draw.text(position, text, fill=text_color, font=font)
-    
+
     return image
 
 
@@ -213,29 +215,52 @@ def _generate_video_with_moviepy(
         ```
     """
     try:
+        print("DEBUG: Creating text clip")  # Debug log
         # Create a text clip
         txt_clip = TextClip(
             text,
             fontsize=70,
             color="white",
             size=(1280, 720),
-        ).set_duration(duration)
+        )
+        print(f"DEBUG: Created text clip: {txt_clip}")  # Debug log
 
+        txt_clip = txt_clip.set_duration(duration)
+        print("DEBUG: Set duration on text clip")  # Debug log
+
+        print("DEBUG: Creating background frame")  # Debug log
         # Create a color clip for the background
-        color_clip = ImageClip(
-            _create_video_frame(text).convert("RGB")
-        ).set_duration(duration)
+        frame = _create_video_frame(text)
+        print("DEBUG: Created video frame")  # Debug log
+        rgb_frame = frame.convert("RGB")
+        print("DEBUG: Converted frame to RGB")  # Debug log
 
+        print("DEBUG: Creating image clip")  # Debug log
+        color_clip = ImageClip(rgb_frame)
+        print(f"DEBUG: Created image clip: {color_clip}")  # Debug log
+        color_clip = color_clip.set_duration(duration)
+        print("DEBUG: Set duration on image clip")  # Debug log
+
+        print("DEBUG: Creating composite video")  # Debug log
         # Overlay the text clip on the color clip
         video = CompositeVideoClip([color_clip, txt_clip])
+        print(f"DEBUG: Created composite video: {video}")  # Debug log
 
+        print(f"DEBUG: Writing video to {output_path}")  # Debug log
         # Write the video file
-        video.write_videofile(
+        write_result = video.write_videofile(
             str(output_path),
             fps=fps,
             codec="libx264",
             audio=False,
         )
+        print(f"DEBUG: write_videofile result: {write_result}")  # Debug log
+
+        # Close the clips to free resources
+        video.close()
+        color_clip.close()
+        txt_clip.close()
+
         return True
 
     except ImportError as e:
@@ -246,6 +271,9 @@ def _generate_video_with_moviepy(
             f"Error generating video with MoviePy: {e}",
             file=sys.stderr,
         )
+        import traceback
+
+        traceback.print_exc()  # Print full traceback for debugging
         return False
 
 
@@ -262,7 +290,7 @@ def generate_video_file(
     use_moviepy: bool = False,
 ) -> bool:
     """Generate a video file with the given text content.
-    
+
     Args:
         content: Text content to display in the video
         output_path: Path where the video file will be saved
@@ -274,10 +302,10 @@ def generate_video_file(
         text_color: Text color as a color name or hex string
         font_size: Font size in points
         use_moviepy: Whether to use moviepy instead of ffmpeg
-        
+
     Returns:
         bool: True if video was generated successfully, False otherwise
-    
+
     Raises:
         ImportError: If required dependencies are not installed
     """
@@ -315,10 +343,10 @@ def generate_video_file(
 
 def _video_not_available(*args, **kwargs):
     """Raise an informative error when video generation is not available.
-    
+
     This function is registered as a placeholder when required dependencies
     are not installed.
-    
+
     Raises:
         ImportError: Always raises with installation instructions.
     """
@@ -332,26 +360,37 @@ def _video_not_available(*args, **kwargs):
 # Import the registration module if available
 try:
     from .registration import register_generator as _register_generator
+
     register_generator = _register_generator
     REGISTRATION_AVAILABLE = True
 except ImportError:
     REGISTRATION_AVAILABLE = False
+
     # Create a dummy decorator that does nothing
     def _noop_decorator(*args, **kwargs):
         def decorator(func):
             return func
+
         return decorator
+
     register_generator = _noop_decorator
-    print("WARNING: Video generator registration is not available. Required dependencies may be missing.", file=sys.stderr)
+    print(
+        "WARNING: Video generator registration is not available. Required dependencies may be missing.",
+        file=sys.stderr,
+    )
 
 # Only register the video generator if we have a valid register_generator function
 if register_generator is not None and callable(register_generator):
     if all([PILLOW_AVAILABLE, NUMPY_AVAILABLE, MOVIEPY_AVAILABLE]):
         register_generator(["mp4", "avi", "mov", "mkv"])(generate_video_file)
-        print("DEBUG: Successfully registered video generator with formats: mp4, avi, mov, mkv")
+        print(
+            "DEBUG: Successfully registered video generator with formats: mp4, avi, mov, mkv"
+        )
     else:
         register_generator(["mp4", "avi", "mov", "mkv"])(_video_not_available)
-        print("WARNING: Video generator registered with placeholder. Missing dependencies:")
+        print(
+            "WARNING: Video generator registered with placeholder. Missing dependencies:"
+        )
         if not PILLOW_AVAILABLE:
             print("  - Pillow (PIL)")
         if not NUMPY_AVAILABLE:
@@ -359,4 +398,7 @@ if register_generator is not None and callable(register_generator):
         if not MOVIEPY_AVAILABLE:
             print("  - MoviePy")
 else:
-    print("WARNING: Could not register video generator. Required dependencies may be missing.", file=sys.stderr)
+    print(
+        "WARNING: Could not register video generator. Required dependencies may be missing.",
+        file=sys.stderr,
+    )
