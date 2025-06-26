@@ -85,7 +85,7 @@ def generate_excel_file(
 # Register this generator
 def register() -> None:
     """Register the Excel file generator."""
-    from ..registration import register_generator
+    from .registration import register_generator
     
     @register_generator(["xlsx", "xls"])
     def excel_generator(

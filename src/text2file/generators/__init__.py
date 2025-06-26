@@ -144,12 +144,12 @@ try:
     from .office import *  # noqa: F401, F403
     from .video import *  # noqa: F401, F403
     
-    # Import and register XLSX generator
+    # Import and register Excel generator
     try:
-        from .xlsx_generator import XLSXGenerator  # noqa: F401
-        register_generator(["xlsx"])(XLSXGenerator().generate)
+        from .excel import register as register_excel_generator
+        register_excel_generator()
     except ImportError as e:
-        print(f"Warning: XLSX generation not available: {e}", file=sys.stderr)  # noqa: T201
+        print(f"Warning: Excel generation not available: {e}", file=sys.stderr)  # noqa: T201
 
     # Add ImageSetGenerator to __all__
     __all__.append("ImageSetGenerator")
