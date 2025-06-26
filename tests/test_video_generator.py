@@ -119,26 +119,40 @@ def test_generate_video_with_ffmpeg_errors(mock_run, tmp_path):
     (10, 30),
 ])
 @patch("moviepy.editor.TextClip")
-@patch("moviepy.editor.ColorClip")
+@patch("moviepy.editor.ImageClip")
 @patch("moviepy.editor.CompositeVideoClip")
+@patch("src.text2file.generators.video._create_video_frame")
 def test_generate_video_with_moviepy(
-    mock_composite_cls, mock_color_cls, mock_text_cls, tmp_path, duration, fps
+    mock_create_frame, mock_composite_cls, mock_image_cls, mock_text_cls, 
+    tmp_path, duration, fps, monkeypatch
 ):
     """Test generating videos with moviepy using different parameters."""
     if not MOVIEPY_AVAILABLE:
         pytest.skip("moviepy is not available")
 
     output_path = tmp_path / f"test_moviepy_{duration}s_{fps}fps.mp4"
+    
+    # Create a mock PIL Image with required attributes
+    mock_pil_image = MagicMock()
+    mock_pil_image.size = (1280, 720)
+    mock_pil_image.convert.return_value = mock_pil_image
+    mock_create_frame.return_value = mock_pil_image
 
-    # Setup mock behavior
-    mock_text = MagicMock()
-    mock_text_cls.return_value = mock_text
-
-    mock_color = MagicMock()
-    mock_color_cls.return_value = mock_color
-
+    # Setup mock behavior for TextClip
+    mock_text_clip = MagicMock()
+    mock_text_cls.return_value = mock_text_clip
+    
+    # Setup mock behavior for ImageClip
+    mock_image_clip = MagicMock()
+    mock_image_cls.return_value = mock_image_clip
+    
+    # Setup mock behavior for CompositeVideoClip
     mock_composite = MagicMock()
     mock_composite_cls.return_value = mock_composite
+    
+    # Mock the context manager behavior for CompositeVideoClip
+    mock_composite.__enter__.return_value = mock_composite
+    mock_composite.__exit__.return_value = None
 
     # Call with test parameters
     result = _generate_video_with_moviepy(
@@ -152,11 +166,34 @@ def test_generate_video_with_moviepy(
     assert result is True
 
     # Verify the mocks were called with expected parameters
-    mock_text_cls.assert_called_once()
-    mock_color_cls.assert_called_once()
+    mock_create_frame.assert_called_once_with(
+        TEST_VIDEO_TEXT, 
+        width=1280, 
+        height=720
+    )
+    mock_pil_image.convert.assert_called_once_with("RGB")
+    
+    # Verify TextClip was created with correct parameters
+    mock_text_cls.assert_called_once_with(
+        txt=TEST_VIDEO_TEXT,
+        fontsize=70,
+        color="white",
+        size=(1280, 720)
+    )
+    
+    # Verify ImageClip was created with the frame
+    mock_image_cls.assert_called_once_with(mock_pil_image)
+    mock_image_clip.set_duration.assert_called_once_with(duration)
+    
+    # Verify CompositeVideoClip was created with correct layers
     mock_composite_cls.assert_called_once()
+    
+    # Verify write_videofile was called with correct parameters
     mock_composite.write_videofile.assert_called_once_with(
-        str(output_path), fps=fps, codec="libx264", audio=False
+        str(output_path),
+        fps=fps,
+        codec="libx264",
+        audio=False
     )
 
 
