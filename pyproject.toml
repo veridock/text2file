@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "text2file"
-version = "0.1.10"
+version = "0.1.11"
 description = "A utility to generate test files in various formats from text content"
 authors = ["Tom Sapletta <info@softreck.dev>"]
 license = "Apache 2.0"
