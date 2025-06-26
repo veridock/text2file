@@ -2,8 +2,8 @@
 name = "text2file"
 version = "0.1.7"
 description = "A utility to generate test files in various formats from text content"
-authors = ["Your Name <your.email@example.com>"]
-license = "MIT"
+authors = ["Tom Sapletta <info@softreck.dev>"]
+license = "Apache "
 readme = "README.md"
 packages = [{include = "text2file", from = "src"}]
 
