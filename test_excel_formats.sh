@@ -53,9 +53,11 @@ echo -e "\n=== Test Complete ==="
 ls -lh test_output/*.{xls,xlsx} 2>/dev/null || echo "No Excel files found in test_output/"
 
 echo -e "\n=== Verifying Excel Files ==="
-for file in test_output/*.{xls,xlsx} 2>/dev/null; do
-    if [ -f "$file" ]; then
-        echo -e "\nFile: $file"
-        python3 check_excel.py "$file"
-    fi
+# Use find to handle cases where no files match the pattern
+find test_output/ \( -name "*.xls" -o -name "*.xlsx" \) -type f -print0 | while IFS= read -r -d $'\0' file; do
+    echo -e "\nFile: $file"
+    echo "=== File content ==="
+    cat "$file"
+    echo -e "\n=== Excel content ==="
+    poetry run python check_excel.py "$file"
 done
