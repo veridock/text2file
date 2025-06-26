@@ -313,6 +313,22 @@ def generate_video_file(
     raise RuntimeError(error_msg)
 
 
+def _video_not_available(*args, **kwargs):
+    """Raise an informative error when video generation is not available.
+    
+    This function is registered as a placeholder when required dependencies
+    are not installed.
+    
+    Raises:
+        ImportError: Always raises with installation instructions.
+    """
+    raise ImportError(
+        "Video generation requires additional dependencies. "
+        "Please install them with:\n"
+        "pip install opencv-python numpy pillow moviepy"
+    )
+
+
 # Import the registration module if available
 try:
     from .registration import register_generator as _register_generator
@@ -327,21 +343,6 @@ except ImportError:
         return decorator
     register_generator = _noop_decorator
     print("WARNING: Video generator registration is not available. Required dependencies may be missing.", file=sys.stderr)
-
-    def _video_not_available(*args, **kwargs):
-        """Raise an informative error when video generation is not available.
-        
-        This function is registered as a placeholder when required dependencies
-        are not installed.
-        
-        Raises:
-            ImportError: Always raises with installation instructions.
-        """
-        raise ImportError(
-            "Video generation requires additional dependencies. "
-            "Please install them with:\n"
-            "pip install opencv-python numpy pillow moviepy"
-        )
 
 # Only register the video generator if we have a valid register_generator function
 if register_generator is not None and callable(register_generator):
