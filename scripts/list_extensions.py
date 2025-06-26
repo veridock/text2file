@@ -12,7 +12,9 @@ from src.text2file.generators import SUPPORTED_EXTENSIONS  # noqa: E402
 
 def main():
     """Print all supported file extensions, one per line."""
-    for ext in sorted(SUPPORTED_EXTENSIONS):
+    # Call the SUPPORTED_EXTENSIONS function to get the set of extensions
+    extensions = SUPPORTED_EXTENSIONS()
+    for ext in sorted(extensions):
         print(ext)
 
 
