@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 import openpyxl
-from openpyxl.utils import get_column_letter
 from openpyxl.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
@@ -29,16 +28,22 @@ class XLSXGenerator(FileGeneratorBase):
     def _auto_adjust_columns(self, worksheet: Worksheet) -> None:
         """Auto-adjust column widths based on content."""
         for column_cells in worksheet.columns:
+            if not column_cells:  # Skip empty columns
+                continue
+                
             max_length = 0
             column = column_cells[0].column_letter  # Get the column name
+            
             for cell in column_cells:
                 try:
-                    if len(str(cell.value)) > max_length:
+                    if cell.value and len(str(cell.value)) > max_length:
                         max_length = len(str(cell.value))
-                except:
-                    pass
-            adjusted_width = (max_length + 2) * 1.2
-            worksheet.column_dimensions[column].width = adjusted_width
+                except Exception:  # noqa: BLE001
+                    continue
+                    
+            if max_length > 0:
+                adjusted_width = (max_length + 2) * 1.2
+                worksheet.column_dimensions[column].width = adjusted_width
     
     def generate(
         self,
@@ -48,7 +53,7 @@ class XLSXGenerator(FileGeneratorBase):
     ) -> Path:
         """
         Generate an Excel file from the given content.
-        
+
         Args:
             content: The content to write to the file. For XLSX, this should be
                     a CSV-like string where rows are separated by newlines and
@@ -77,13 +82,21 @@ class XLSXGenerator(FileGeneratorBase):
             self._auto_adjust_columns(self._worksheet)
         
         # Save the workbook
-        self._workbook.save(output_path)
-        return output_path
-    
+        try:
+            self._workbook.save(output_path)
+            return output_path
+        except Exception as e:
+            raise IOError(f"Failed to save XLSX file: {e}") from e
+        finally:
+            self.cleanup()
+
     def cleanup(self) -> None:
         """Clean up any resources used by the generator."""
         if self._workbook:
-            self._workbook.close()
+            try:
+                self._workbook.close()
+            except Exception:  # noqa: BLE001
+                pass  # Ignore errors during cleanup
             self._workbook = None
         self._worksheet = None
 

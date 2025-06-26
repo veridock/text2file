@@ -38,7 +38,7 @@ A powerful utility to generate test files in various formats from text content. 
 - 📄 Support for various file types:
   - **Text**: `.txt`, `.md`, `.html`, `.css`, `.js`, `.py`, `.json`, `.csv`
   - **Documents**: `.pdf`, `.docx`, `.odt`
-  - **Spreadsheets**: `.xlsx`
+  - **Spreadsheets**: `.xlsx` (Excel)
   - **Images**: `.jpg`, `.jpeg`, `.png`, `.bmp`, `.gif`, `.svg`
   - **Videos**: `.mp4`, `.avi`, `.mov` (basic support)
   - **Archives**: `.zip`, `.tar`, `.tar.gz`, `.tgz`
@@ -196,9 +196,22 @@ Options:
 - `-t, --text`: Text to render on placeholder images
 - `--fg, --text-color`: Text color for placeholders (default: "#000000")
 
-#### Generate multiple files with different formats
+#### Generate an Excel (.xlsx) file
 ```bash
-text2file generate --content "Sample content" --extension txt,md,html --output-dir ./output
+# Basic Excel file from CSV-like content
+content="Name,Age,City\nJohn,30,New York\nAlice,25,London"
+text2file generate --content "$content" --extension xlsx
+
+# With custom sheet name
+text2file generate --content "$content" --extension xlsx --sheet_name "Employees"
+
+# Disable auto-adjusting column widths
+text2file generate --content "$content" --extension xlsx --no-auto-adjust
+```
+
+### Generate multiple files with different formats
+```bash
+text2file generate --content "Sample content" --extension txt,md,html,xlsx --output-dir ./output
 ```
 
 #### Validate generated files
