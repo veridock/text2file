@@ -346,6 +346,17 @@ except ImportError:
 
 # Only register the video generator if we have a valid register_generator function
 if register_generator is not None and callable(register_generator):
-    register_generator(["mp4", "avi", "mov", "mkv"])(_video_not_available)
+    if all([PILLOW_AVAILABLE, NUMPY_AVAILABLE, MOVIEPY_AVAILABLE]):
+        register_generator(["mp4", "avi", "mov", "mkv"])(generate_video_file)
+        print("DEBUG: Successfully registered video generator with formats: mp4, avi, mov, mkv")
+    else:
+        register_generator(["mp4", "avi", "mov", "mkv"])(_video_not_available)
+        print("WARNING: Video generator registered with placeholder. Missing dependencies:")
+        if not PILLOW_AVAILABLE:
+            print("  - Pillow (PIL)")
+        if not NUMPY_AVAILABLE:
+            print("  - NumPy")
+        if not MOVIEPY_AVAILABLE:
+            print("  - MoviePy")
 else:
     print("WARNING: Could not register video generator. Required dependencies may be missing.", file=sys.stderr)

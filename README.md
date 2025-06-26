@@ -118,12 +118,53 @@ text2file generate --content "Sample video content" --extension mp4
 
 # Generate a video with custom duration and resolution
 text2file generate --content "Custom video" --extension mp4 --duration 10 --resolution 1280x720
+
+# Generate a video with custom colors and font size
+text2file generate --content "Styled Video" --extension mp4 --bg-color "#000000" --text-color "#ffffff" --font-size 48
+
+# Generate a video with a specific output path
+text2file generate --content "Saved Video" --extension mp4 -o ./videos/custom_output.mp4
 ```
 
-This will create a video file with the specified content as text overlay. Video generation supports:
-- Custom duration (in seconds)
-- Custom resolution (e.g., 1920x1080)
-- Background and text color customization
+Video generation supports the following formats:
+- `.mp4` - MPEG-4 video (most widely supported)
+- `.avi` - Audio Video Interleave
+- `.mov` - QuickTime Movie
+- `.mkv` - Matroska Video
+
+### Video Generation Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--duration` | Duration of the video in seconds | 5 |
+| `--fps` | Frames per second | 24 |
+| `--resolution` | Video resolution (WxH) | 1280x720 |
+| `--bg-color` | Background color (name or hex) | "black" |
+| `--text-color` | Text color (name or hex) | "white" |
+| `--font-size` | Font size in pixels | 40 |
+| `-o, --output` | Output file path | auto-generated |
+
+### Example: Create a YouTube Short
+```bash
+text2file generate \
+  --content "Check out our new feature!" \
+  --extension mp4 \
+  --duration 15 \
+  --resolution 1080x1920 \
+  --bg-color "#1a1a1a" \
+  --text-color "#ff6b6b" \
+  --font-size 64 \
+  -o my_youtube_short.mp4
+```
+
+### Dependencies
+Video generation requires the following Python packages which are automatically installed with `pip install text2file`:
+- `opencv-python`
+- `numpy`
+- `pillow`
+- `moviepy`
+
+Note: For best performance, it's recommended to have `ffmpeg` installed on your system, though it's not strictly required as `moviepy` will use a fallback if needed.
 
 ### Advanced Image Generation
 
