@@ -124,7 +124,7 @@ def test_generate_video_with_ffmpeg_errors(mock_run, tmp_path):
 )
 @patch("moviepy.editor.TextClip")
 @patch("moviepy.editor.ImageClip")
-@patch("moviepy.video.compositing.CompositeVideoClip")
+@patch("moviepy.editor.CompositeVideoClip")
 @patch("moviepy.video.VideoClip.ColorClip")
 @patch("src.text2file.generators.video._create_video_frame")
 def test_generate_video_with_moviepy(
@@ -190,12 +190,13 @@ def test_generate_video_with_moviepy(
     print(f"Mock ColorClip size: {mock_color_clip.size}")
         
     # Debug: Print the actual ColorClip class being used by CompositeVideoClip
-    from moviepy.video.compositing import CompositeVideoClip
+    from moviepy.editor import CompositeVideoClip
     from moviepy.video.VideoClip import ColorClip
     print(f"\n=== ACTUAL IMPORTS ===")
     print(f"Actual CompositeVideoClip: {CompositeVideoClip}")
     print(f"Actual ColorClip: {ColorClip}")
     print(f"Is ColorClip patched? {ColorClip is mock_color_cls}")
+    print(f"Is CompositeVideoClip patched? {CompositeVideoClip is mock_composite_cls}")
         
     # Add a side effect to the mock to see when it's called
     def color_clip_side_effect(*args, **kwargs):
