@@ -4,20 +4,40 @@ This module provides functions to generate video files with text content.
 It supports multiple video formats and can use either ffmpeg or moviepy as the backend.
 """
 
+"""Video file generation functionality.
+
+This module provides functions to generate video files with text content.
+It supports multiple video formats and can use either ffmpeg or moviepy as the backend.
+"""
+
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Union, cast
+from typing import TYPE_CHECKING, Any, Union
 
 # Only import these when type checking to avoid circular imports
 if TYPE_CHECKING:
     from PIL import Image, ImageDraw, ImageFont  # noqa: F401
-    from PIL.ImageFont import FreeTypeFont  # noqa: F401
-    from moviepy.editor import CompositeVideoClip, ImageClip, TextClip  # noqa: F401
-    from numpy import ndarray  # noqa: F401
+    from moviepy.editor import TextClip  # noqa: F401
     from ..registration import register_generator  # noqa: F401
-    from typing import Any, Union  # noqa: F401
+
+# Initialize module-level variables
+PILLOW_AVAILABLE = False
+NUMPY_AVAILABLE = False
+MOVIEPY_AVAILABLE = False
+REGISTRATION_AVAILABLE = False
+
+# Initialize module-level imports with type hints
+FreeTypeFont: Any = None  # type: ignore
+Image: Any = None  # type: ignore
+ImageDraw: Any = None  # type: ignore
+ImageFont: Any = None  # type: ignore
+np: Any = None  # type: ignore
+TextClip: Any = None  # type: ignore
+CompositeVideoClip: Any = None  # type: ignore
+ImageClip: Any = None  # type: ignore
+register_generator: Any = None  # type: ignore
 
 # Third-party imports (make optional with try/except)
 try:
@@ -26,48 +46,24 @@ try:
     PILLOW_AVAILABLE = True
 except ImportError:
     PILLOW_AVAILABLE = False
-    FreeTypeFont = Image = ImageDraw = ImageFont = None  # type: ignore
 
-# Check if NumPy is available
 try:
     import numpy as np  # type: ignore
     NUMPY_AVAILABLE = True
 except ImportError:
     NUMPY_AVAILABLE = False
-    np = None  # type: ignore
 
-# Check if moviepy is available
 try:
-    from moviepy.editor import CompositeVideoClip, ImageClip, TextClip  # type: ignore
+    from moviepy.editor import TextClip, CompositeVideoClip, ImageClip  # type: ignore
     MOVIEPY_AVAILABLE = True
 except ImportError:
     MOVIEPY_AVAILABLE = False
-    CompositeVideoClip = ImageClip = TextClip = None  # type: ignore
-    
-    # Define types for static type checkers
-    if TYPE_CHECKING:
-        CompositeVideoClip = ImageClip = TextClip = Any  # type: ignore
-    
-# Check if NumPy is available
-try:
-    import numpy as np  # type: ignore
-    NUMPY_AVAILABLE = True
-except ImportError:
-    NUMPY_AVAILABLE = False
-    np = None  # type: ignore
 
-# Check if registration is available
 try:
     from ..registration import register_generator  # type: ignore
     REGISTRATION_AVAILABLE = True
 except ImportError:
     REGISTRATION_AVAILABLE = False
-    register_generator = None  # type: ignore
-    CompositeVideoClip = ImageClip = TextClip = None  # type: ignore
-
-# Conditional import to avoid circular imports
-if TYPE_CHECKING or (PILLOW_AVAILABLE and NUMPY_AVAILABLE):
-    from ..generators.registration import register_generator_directly  # noqa: F401
 
 
 def _create_video_frame(
@@ -77,7 +73,7 @@ def _create_video_frame(
     bg_color: str = "#000000",
     text_color: str = "#FFFFFF",
     font_size: int = 24,
-) -> 'Image.Image':
+) -> Any:  # Return type should be PIL.Image.Image but we use Any for optional deps
     """Create a video frame with centered text.
     
     Args:
@@ -116,9 +112,6 @@ def _create_video_frame(
             )
         except (IOError, OSError):
             pass  # Use default font
-    
-    # Type hint workaround for font object
-    font = cast(Any, font)
     
     # Calculate text position (centered)
     if font is not None:
@@ -220,12 +213,6 @@ def _generate_video_with_moviepy(
         ```
     """
     try:
-        from moviepy.editor import (  # type: ignore
-            CompositeVideoClip,
-            ImageClip,
-            TextClip,
-        )
-
         # Create a text clip
         txt_clip = TextClip(
             text,
@@ -236,11 +223,11 @@ def _generate_video_with_moviepy(
 
         # Create a color clip for the background
         color_clip = ImageClip(
-            _create_video_frame(text).convert("RGB")  # type: ignore
+            _create_video_frame(text).convert("RGB")
         ).set_duration(duration)
 
         # Overlay the text clip on the color clip
-        video = CompositeVideoClip([color_clip, txt_clip])  # type: ignore
+        video = CompositeVideoClip([color_clip, txt_clip])
 
         # Write the video file
         video.write_videofile(
@@ -326,22 +313,21 @@ def generate_video_file(
     raise RuntimeError(error_msg)
 
 
-# Import registration function at the end to avoid circular imports
-from .registration import register_generator  # noqa: E402
+# Import the registration module if available
+try:
+    from .registration import register_generator as _register_generator
+    register_generator = _register_generator
+    REGISTRATION_AVAILABLE = True
+except ImportError:
+    REGISTRATION_AVAILABLE = False
+    # Create a dummy decorator that does nothing
+    def _noop_decorator(*args, **kwargs):
+        def decorator(func):
+            return func
+        return decorator
+    register_generator = _noop_decorator
+    print("WARNING: Video generator registration is not available. Required dependencies may be missing.", file=sys.stderr)
 
-# Define registration availability
-REGISTRATION_AVAILABLE = PILLOW_AVAILABLE and NUMPY_AVAILABLE
-
-# Only register generators if all required dependencies are available
-if all([
-    PILLOW_AVAILABLE,
-    NUMPY_AVAILABLE,
-    REGISTRATION_AVAILABLE,
-    register_generator is not None
-]):
-    register_generator(["mp4", "avi", "mov", "mkv"])(generate_video_file)
-else:
-    # Register a placeholder that will raise an informative error when used
     def _video_not_available(*args, **kwargs):
         """Raise an informative error when video generation is not available.
         
@@ -352,15 +338,13 @@ else:
             ImportError: Always raises with installation instructions.
         """
         raise ImportError(
-            "Video generation requires Pillow and NumPy. "
-            "Install with: pip install pillow numpy\n"
-            "For additional video format support, install moviepy and ffmpeg:\n"
-            "pip install moviepy\n"
-            "Note: ffmpeg must be installed separately on your system.\n"
-            "See https://ffmpeg.org/ for installation instructions.\n"
-            "- Linux: sudo apt-get install ffmpeg\n"
-            "- macOS: brew install ffmpeg\n"
-            "- Windows: Download from https://ffmpeg.org/"
+            "Video generation requires additional dependencies. "
+            "Please install them with:\n"
+            "pip install opencv-python numpy pillow moviepy"
         )
-    
+
+# Only register the video generator if we have a valid register_generator function
+if register_generator is not None and callable(register_generator):
     register_generator(["mp4", "avi", "mov", "mkv"])(_video_not_available)
+else:
+    print("WARNING: Could not register video generator. Required dependencies may be missing.", file=sys.stderr)
