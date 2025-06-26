@@ -40,6 +40,7 @@ A powerful utility to generate test files in various formats from text content. 
   - **Documents**: `.pdf`, `.docx`, `.odt`
   - **Spreadsheets**: `.xlsx`
   - **Images**: `.jpg`, `.jpeg`, `.png`, `.bmp`, `.gif`, `.svg`
+  - **Videos**: `.mp4`, `.avi`, `.mov` (basic support)
   - **Archives**: `.zip`, `.tar`, `.tar.gz`, `.tgz`
 - ✅ File validation to ensure generated files are not corrupted
 - 🔄 Clean up invalid files with a single command
@@ -110,14 +111,58 @@ text2file generate --content "Hello, World!" --extension txt --output-dir ./outp
 text2file list
 ```
 
-#### Generate a video file (requires optional dependencies)
+#### Generate a video file
 ```bash
+# Generate a basic video with text overlay
 text2file generate --content "Sample video content" --extension mp4
+
+# Generate a video with custom duration and resolution
+text2file generate --content "Custom video" --extension mp4 --duration 10 --resolution 1280x720
 ```
 
-This will create a video file with the specified content as text overlay.
+This will create a video file with the specified content as text overlay. Video generation supports:
+- Custom duration (in seconds)
+- Custom resolution (e.g., 1920x1080)
+- Background and text color customization
+
+### Advanced Image Generation
 
 #### Generate a set of images from a JSON configuration
+
+Create a JSON file (e.g., `icons.json`) with the following format:
+
+```json
+{
+  "icons": [
+    {"src": "icon-16x16.png", "sizes": "16x16"},
+    {"src": "icon-32x32.png", "sizes": "32x32"},
+    {"src": "icon-64x64.png", "sizes": "64x64"}
+  ]
+}
+```
+
+Then run:
+
+```bash
+# Generate placeholder images with default text
+text2file generate-set icons.json
+
+# Use a base image and resize it
+text2file generate-set icons.json --base-image source-icon.png
+
+# Customize the placeholder appearance
+text2file generate-set icons.json --text "My App" --background-color "#f0f0f0" --text-color "#333333"
+
+# Generate SVG images with custom content
+text2file generate --content "<svg><circle cx='50' cy='50' r='40' fill='blue'/></svg>" --extension svg
+```
+
+Options:
+- `-o, --output-dir`: Output directory (default: current directory)
+- `-b, --base-image`: Base image to use for resizing (optional)
+- `--bg, --background-color`: Background color for placeholders (default: "#ffffff")
+- `-t, --text`: Text to render on placeholder images
+- `--fg, --text-color`: Text color for placeholders (default: "#000000")
 
 Create a JSON file (e.g., `icons.json`) with the following format:
 
