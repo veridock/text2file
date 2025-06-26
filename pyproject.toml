@@ -1,9 +1,9 @@
 [tool.poetry]
 name = "text2file"
-version = "0.1.7"
+version = "0.1.8"
 description = "A utility to generate test files in various formats from text content"
 authors = ["Tom Sapletta <info@softreck.dev>"]
-license = "Apache "
+license = "Apache 2.0"
 readme = "README.md"
 packages = [{include = "text2file", from = "src"}]
 
